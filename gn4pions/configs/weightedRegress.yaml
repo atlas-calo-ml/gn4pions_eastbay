@@ -1,12 +1,12 @@
 data: 
-  data_dir: /usr/workspace/hip/ML4Jets/regression_images/
+  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
   num_train_files: 10
   num_val_files: 10
   batch_size: 1024
   shuffle: False
   num_procs: 32
   preprocess: True
-  output_dir: /p/vast1/karande1/heavyIon/data/preprocessed_data/gn4pions/geo/
+  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
   already_preprocessed: True
 model:
   block_type: graphnet
