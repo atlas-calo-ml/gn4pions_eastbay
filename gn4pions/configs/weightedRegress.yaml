@@ -1,12 +1,12 @@
 data: 
-  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
-  num_train_files: 10
+  data_dir: /clusterfs/ml4hep/mfong/ML4Pions/MLTreeData/
+  num_train_files: 20
   num_val_files: 10
   batch_size: 1024
   shuffle: False
   num_procs: 32
   preprocess: True
-  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
+  output_dir: /clusterfs/ml4hep/mfong/ML4Pions/MLTreeData/
   already_preprocessed: True
 model:
   block_type: graphnet
