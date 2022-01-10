@@ -103,7 +103,7 @@ class GraphDataGenerator:
     def get_edges(self, cluster_num_nodes, cell_IDmap):
         """
         Reading edge features
-        Resturns senders, receivers, and edges
+        Returns senders, receivers, and edges
         """
 
         edge_inds = np.zeros((cluster_num_nodes, self.num_edgeFeatures))
@@ -129,7 +129,7 @@ class GraphDataGenerator:
         """
         file_num = worker_id
         while file_num < self.num_files:
-            print(f"Proceesing file number {file_num}")
+            print(f"Processing file number {file_num}")
             file = self.pion_file_list[file_num]
             event_tree = ur.open(file)['EventTree']
             num_events = event_tree.num_entries
