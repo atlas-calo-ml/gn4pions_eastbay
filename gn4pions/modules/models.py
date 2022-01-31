@@ -75,7 +75,7 @@ class MLPGraphIndependent(snt.Module):
 # Cell
 class MLPGraphNetwork(snt.Module):
     """GraphNetwork with MLP edge, node, and global models."""
-    def __init__(self, name='MLPGraphNetwork', model_config=None):
+    def __init__(self, name='MLPGraphNetwork', **model_config):
         super(MLPGraphNetwork, self).__init__(name=name)
 
         if model_config['reducer'] == 'mean':
@@ -101,7 +101,7 @@ class MLPGraphNetwork(snt.Module):
 # Cell
 class MLPDeepSets(snt.Module):
     """Deepsets with MLP node, and global models."""
-    def __init__(self, name='MLPDeepSets', model_config=None):
+    def __init__(self, name='MLPDeepSets', **model_config):
         super(MLPDeepSets, self).__init__(name=name)
 
         if model_config['reducer'] == 'mean':

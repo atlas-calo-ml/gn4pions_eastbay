@@ -103,7 +103,7 @@ class GraphDataGenerator:
     def get_edges(self, cluster_num_nodes, cell_IDmap):
         """
         Reading edge features
-        Returns senders, receivers, and edges
+        Resturns senders, receivers, and edges
         """
 
         edge_inds = np.zeros((cluster_num_nodes, self.num_edgeFeatures))
