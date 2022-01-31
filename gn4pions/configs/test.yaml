@@ -1,12 +1,12 @@
 data: 
-  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
+  data_dir: /global/cfs/cdirs/m3246/mpettee/data/
   num_train_files: 10
   num_val_files: 10
   batch_size: 1024
   shuffle: False
   num_procs: 32
   preprocess: True
-  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
+  output_dir: /global/cfs/cdirs/m3246/mpettee/data/
   already_preprocessed: True
 model:
   block_type: graphnet
