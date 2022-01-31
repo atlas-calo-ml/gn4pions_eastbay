@@ -1,13 +1,13 @@
 data: 
   data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
-  num_train_files: 50
-  num_val_files: 20
+  num_train_files: 100
+  num_val_files: 25
   batch_size: 1024
   shuffle: False
   num_procs: 32
   preprocess: True
   output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
-  already_preprocessed: False
+  already_preprocessed: True
 model:
   block_type: graphnet
   concat_input: true
@@ -21,7 +21,7 @@ model:
 training: 
   alpha: .75 
   epochs: 100
-  gpu: 0
+  gpu: 1
   learning_rate: 0.001
   log_freq: 100
   save_dir: results/ 
