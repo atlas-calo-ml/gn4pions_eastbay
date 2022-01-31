@@ -129,7 +129,7 @@ class GraphDataGenerator:
         """
         file_num = worker_id
         while file_num < self.num_files:
-            print(f"Proceesing file number {file_num}")
+            print(f"Processing file number {file_num}")
             file = self.pion_file_list[file_num]
             event_tree = ur.open(file)['EventTree']
             num_events = event_tree.num_entries
