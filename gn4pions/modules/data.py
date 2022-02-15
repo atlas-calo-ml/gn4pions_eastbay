@@ -45,7 +45,7 @@ class GraphDataGenerator:
         self.cellGeo_file = cellGeo_file
 
         self.cellGeo_data = ur.open(self.cellGeo_file)['CellGeo']
-        self.geoFeatureNames = self.cellGeo_data.keys()[1:9]
+        self.geoFeatureNames = self.cellGeo_data.keys()[2:9] # originally [1:9]
         self.nodeFeatureNames = ['cluster_cell_E', *self.geoFeatureNames[:-2]]
         self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
         self.num_nodeFeatures = len(self.nodeFeatureNames)
@@ -86,8 +86,8 @@ class GraphDataGenerator:
         nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
         global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])
 
-        # Scaling the cell_geo_sampling by 28
-        nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap]/28.)
+#         # Scaling the cell_geo_sampling by 28
+#         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap]/28.)
         for f in self.nodeFeatureNames[2:4]:
             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
         # Scaling the cell_geo_rPerp by 3000
