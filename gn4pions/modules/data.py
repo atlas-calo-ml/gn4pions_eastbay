@@ -45,7 +45,7 @@ class GraphDataGenerator:
         self.cellGeo_file = cellGeo_file
 
         self.cellGeo_data = ur.open(self.cellGeo_file)['CellGeo']
-        self.geoFeatureNames = self.cellGeo_data.keys()[2:9] # originally [1:9]
+        self.geoFeatureNames = self.cellGeo_data.keys()[2:9] # should usually be [1:9]
         self.nodeFeatureNames = ['cluster_cell_E', *self.geoFeatureNames[:-2]]
         self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
         self.num_nodeFeatures = len(self.nodeFeatureNames)
@@ -80,13 +80,16 @@ class GraphDataGenerator:
     def get_nodes(self, event_data, event_ind, cluster_ind):
         """ Reading Node features """
 
+        print("Geo feature names", self.geoFeatureNames)
+        print("Node feature names", self.nodeFeatureNames)
+
         cell_IDs = event_data['cluster_cell_ID'][event_ind][cluster_ind]
         cell_IDmap = self.sorter[np.searchsorted(self.cellGeo_ID, cell_IDs, sorter=self.sorter)]
 
         nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
         global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])
 
-#         # Scaling the cell_geo_sampling by 28
+        # Scaling the cell_geo_sampling by 28
 #         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap]/28.)
         for f in self.nodeFeatureNames[2:4]:
             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
@@ -103,7 +106,7 @@ class GraphDataGenerator:
     def get_edges(self, cluster_num_nodes, cell_IDmap):
         """
         Reading edge features
-        Resturns senders, receivers, and edges
+        Returns senders, receivers, and edges
         """
 
         edge_inds = np.zeros((cluster_num_nodes, self.num_edgeFeatures))

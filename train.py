@@ -29,20 +29,14 @@ sns.set_context('poster')
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("config", default=None, choices = ["test", "baseline", "full_dataset"], help="Choose training config file.")
+    parser.add_argument("config_file", default='gn4pions/configs/test.yaml', type=str, help="Specify training config file.")
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = get_args()
 
     # Loading model config
-    if args.config == "test":
-        config_file = 'gn4pions/configs/test.yaml' # for a quick test
-    elif args.config == "baseline":
-        config_file = 'gn4pions/configs/baseline.yaml' # for actual training
-    elif args.config == "full_dataset":
-        config_file = 'gn4pions/configs/full_dataset.yaml' # for actual training
-    config = yaml.load(open(config_file), Loader=yaml.FullLoader)
+    config = yaml.load(open(args.config_file), Loader=yaml.FullLoader)
 
     # Data config
     data_config = config['data']
@@ -67,7 +61,7 @@ if __name__ == "__main__":
     alpha = train_config['alpha']
     os.environ['CUDA_VISIBLE_DEVICES'] = str(train_config['gpu'])
     log_freq = train_config['log_freq']
-    save_dir = train_config['save_dir'] + config_file.replace('.yaml','').split('/')[-1] + '_' + time.strftime("%Y%m%d")
+    save_dir = train_config['save_dir'] + args.config_file.replace('.yaml','').split('/')[-1] + '_' + time.strftime("%Y%m%d")
 
     os.makedirs(save_dir, exist_ok=True)
     yaml.dump(config, open(save_dir + '/config.yaml', 'w'))
