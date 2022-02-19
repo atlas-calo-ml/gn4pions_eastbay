@@ -12,6 +12,9 @@ from multiprocessing import Process, Queue, set_start_method
 import compress_pickle as pickle
 from scipy.stats import circmean
 import random
+import itertools
+
+import pandas as pd
 
 # Cell
 class GraphDataGenerator:
@@ -100,10 +103,65 @@ class GraphDataGenerator:
 
         return nodes, np.array([global_node]), cluster_num_nodes, cell_IDmap
 
+
+
+
+    # WIP
+
+
+
+    def get_track_node(self, event_data, event_index, track_index):
+        """
+        Creates node features for tracks
+        Inputs:
+
+        Returns:
+
+        """
+        node_features = np.array(event_data["trackPt"][event_index][track_index])
+        node_features = np.append(node_features, event_data["trackMass"][event_index][track_index])
+        node_features = np.append(node_features, event_data["trackEta"][event_index][track_index])
+        node_features = np.append(node_features, event_data["trackPhi"][event_index][track_index])
+
+        return node_features
+
+    def get_track_edges(self, num_track_nodes, start_index):
+        """
+        Creates the edge senders and recievers and edge features
+        Inputs:
+        (int) num_track_nodes: number of track nodes
+        (int) start_index: the index of senders/recievers to start with. We should start with num_cluster_edges+1 to avoid overlap
+
+        Returns:
+        (np.array) edge_features:
+        (np.array) senders:
+        (np.array) recievers:
+        """
+        # Full Connected tracks
+        # since we are fully connected, the order of senders and recievers doesn't matter
+        # we just need to count each node - edges will have a placeholder feature
+        connections = list(itertools.permutations(range(start_index, start_index + num_track_nodes),2))
+        for i in range(5):
+            connections.append((i, i))
+
+        senders = np.array([x[0] for x in connections])
+        recievers = np.array([x[0] for x in connections])
+        edge_features = np.ones((len(connections), 1))
+
+        return senders, recievers, edge_features
+
+
+
+
+    # end WIP
+
+
+
+
     def get_edges(self, cluster_num_nodes, cell_IDmap):
         """
         Reading edge features
-        Resturns senders, receivers, and edges
+        Returns senders, receivers, and edges
         """
 
         edge_inds = np.zeros((cluster_num_nodes, self.num_edgeFeatures))
@@ -150,6 +208,27 @@ class GraphDataGenerator:
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
 
+
+
+
+
+
+                    # WIP add track nodes and edges
+                    track_nodes = []
+                    num_tracks = event_data['nTrack'][event_ind]
+                    for track_index in range(num_tracks):
+                        track_nodes.append(self.get_track_node(event_data, event_ind, track_index))
+
+                    track_edge_features, track_senders, track_receivers = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+
+                    # append on the track nodes and edges to the cluster ones
+                    nodes = np.append(nodes, track_nodes)
+                    senders = np.append(senders, track_senders)
+                    receivers = np.append(receivers, track_receivers)
+
+
+
+
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
                         'edges': edges.astype(np.float32)}
@@ -174,6 +253,30 @@ class GraphDataGenerator:
 
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
+
+
+
+
+
+
+
+                    # WIP add track nodes and edges
+                    track_nodes = []
+                    num_tracks = event_data['nTrack'][event_ind]
+                    for track_index in range(num_tracks):
+                        track_nodes.append(self.get_track_node(event_data, event_ind, track_index))
+
+                    track_edge_features, track_senders, track_receivers = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+
+                    # append on the track nodes and edges to the cluster ones
+                    nodes = np.append(nodes, track_nodes)
+                    senders = np.append(senders, track_senders)
+                    receivers = np.append(receivers, track_receivers)
+
+
+
+
+
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
