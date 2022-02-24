@@ -106,7 +106,7 @@ class GraphDataGenerator:
 
 
 
-    # WIP
+    # WIP ----------------------------------------------------------------
 
 
 
@@ -122,6 +122,7 @@ class GraphDataGenerator:
         node_features = np.append(node_features, event_data["trackMass"][event_index][track_index])
         node_features = np.append(node_features, event_data["trackEta"][event_index][track_index])
         node_features = np.append(node_features, event_data["trackPhi"][event_index][track_index])
+        node_features = np.reshape(node_features, (len(node_features), -1)).T
 
         return node_features
 
@@ -153,7 +154,7 @@ class GraphDataGenerator:
 
 
 
-    # end WIP
+    # end WIP ----------------------------------------------------------------
 
 
 
@@ -213,7 +214,7 @@ class GraphDataGenerator:
 
 
 
-                    # WIP add track nodes and edges
+                    # WIP add track nodes and edges ----------------------------------------------------------------
                     track_nodes = []
                     num_tracks = event_data['nTrack'][event_ind]
                     for track_index in range(num_tracks):
@@ -226,6 +227,7 @@ class GraphDataGenerator:
                     senders = np.append(senders, track_senders)
                     receivers = np.append(receivers, track_receivers)
 
+                    # end WIP ----------------------------------------------------------------
 
 
 
@@ -260,7 +262,7 @@ class GraphDataGenerator:
 
 
 
-                    # WIP add track nodes and edges
+                    # WIP add track nodes and edges ----------------------------------------------------------------
                     track_nodes = []
                     num_tracks = event_data['nTrack'][event_ind]
                     for track_index in range(num_tracks):
@@ -273,6 +275,7 @@ class GraphDataGenerator:
                     senders = np.append(senders, track_senders)
                     receivers = np.append(receivers, track_receivers)
 
+                    # end WIP ----------------------------------------------------------------
 
 
 
