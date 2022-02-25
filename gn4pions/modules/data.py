@@ -101,6 +101,14 @@ class GraphDataGenerator:
         nodes = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
         cluster_num_nodes = len(nodes)
 
+        # add dummy placeholder nodes for track features (not used in cluster cell nodes)
+        nodes = np.hstack((nodes, np.zeros((cluster_num_nodes, 4))))
+
+#         print("nodes", nodes)
+#         print("global_node", np.array([global_node]))
+#         print("cluster_num_nodes", cluster_num_nodes)
+#         print(cell_IDmap)
+#         raise Exception("asdfasdfasdf")
         return nodes, np.array([global_node]), cluster_num_nodes, cell_IDmap
 
 
@@ -116,14 +124,22 @@ class GraphDataGenerator:
         Inputs:
 
         Returns:
-
+            1 Dimensional array of node features for a single node
+                NOTE the cluster get_node function is a 2D array of multiple nodes
+                This function is used in a for loop so the end result is a 2D array
         """
         node_features = np.array(event_data["trackPt"][event_index][track_index])
         node_features = np.append(node_features, event_data["trackMass"][event_index][track_index])
         node_features = np.append(node_features, event_data["trackEta"][event_index][track_index])
         node_features = np.append(node_features, event_data["trackPhi"][event_index][track_index])
-        node_features = np.reshape(node_features, (len(node_features), -1)).T
+        node_features = np.reshape(node_features, (len(node_features))).T
 
+#         print("node_features before", node_features)
+        # add dummy placeholder nodes for track features (not used in track cell nodes)
+        node_features = np.hstack((np.zeros(7), node_features))
+
+#         print(node_features)
+#         raise Exception("asdfasdfasdf")
         return node_features
 
     def get_track_edges(self, num_track_nodes, start_index):
@@ -147,7 +163,7 @@ class GraphDataGenerator:
 
         senders = np.array([x[0] for x in connections])
         recievers = np.array([x[0] for x in connections])
-        edge_features = np.ones((len(connections), 1))
+        edge_features = np.zeros((len(connections), 10))
 
         return senders, recievers, edge_features
 
@@ -215,17 +231,28 @@ class GraphDataGenerator:
 
 
                     # WIP add track nodes and edges ----------------------------------------------------------------
-                    track_nodes = []
+                    track_nodes = np.empty((0, 11))
                     num_tracks = event_data['nTrack'][event_ind]
                     for track_index in range(num_tracks):
-                        track_nodes.append(self.get_track_node(event_data, event_ind, track_index))
+#                         print("get func reshaped", self.get_track_node(event_data, event_ind, track_index).reshape(1, -1))
+#                         print("track_nodes", track_nodes)
+#                         raise Exception("stop")
+                        np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
 
-                    track_edge_features, track_senders, track_receivers = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+                    track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+
+
+
+#                     print("old nodes", nodes)
+#                     print("track nodes", track_nodes)
+
 
                     # append on the track nodes and edges to the cluster ones
-                    nodes = np.append(nodes, track_nodes)
-                    senders = np.append(senders, track_senders)
-                    receivers = np.append(receivers, track_receivers)
+
+                    nodes = np.append(nodes, np.array(track_nodes), axis=0)
+                    edges = np.append(edges, track_edge_features, axis=0)
+                    senders = np.append(senders, track_senders, axis=0)
+                    receivers = np.append(receivers, track_receivers, axis=0)
 
                     # end WIP ----------------------------------------------------------------
 
@@ -260,20 +287,26 @@ class GraphDataGenerator:
 
 
 
-
-
                     # WIP add track nodes and edges ----------------------------------------------------------------
-                    track_nodes = []
+                    track_nodes = np.empty((0, 11))
                     num_tracks = event_data['nTrack'][event_ind]
                     for track_index in range(num_tracks):
-                        track_nodes.append(self.get_track_node(event_data, event_ind, track_index))
+                        np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
 
-                    track_edge_features, track_senders, track_receivers = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+                    track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+
 
                     # append on the track nodes and edges to the cluster ones
-                    nodes = np.append(nodes, track_nodes)
-                    senders = np.append(senders, track_senders)
-                    receivers = np.append(receivers, track_receivers)
+#                     if track_nodes:
+                    nodes = np.append(nodes, np.array(track_nodes), axis=0)
+                    edges = np.append(edges, track_edge_features, axis=0)
+                    senders = np.append(senders, track_senders, axis=0)
+                    receivers = np.append(receivers, track_receivers, axis=0)
+
+
+#                     print("nodes", nodes)
+#                     print("edges", edges)
+#                     raise Exception("asdf")
 
                     # end WIP ----------------------------------------------------------------
 
