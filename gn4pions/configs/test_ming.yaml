@@ -1,7 +1,7 @@
 data: 
   data_dir: /clusterfs/ml4hep/mfong/ML4Pions/MLTreeData/
-  num_train_files: 1
-  num_val_files: 1
+  num_train_files: 10
+  num_val_files: 10
   batch_size: 1024
   shuffle: False
   num_procs: 32
@@ -20,7 +20,7 @@ model:
   reducer: mean
 training: 
   alpha: .75 
-  epochs: 3
+  epochs: 20
   gpu: 2
   learning_rate: 0.001
   log_freq: 100
