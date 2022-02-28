@@ -80,6 +80,10 @@ class GraphDataGenerator:
     def get_nodes(self, event_data, event_ind, cluster_ind):
         """ Reading Node features """
 
+#         print("geoFeatureNames", self.geoFeatureNames)
+#         print("nodeFeatureNames", self.nodeFeatureNames)
+#         print("edgeFeatureNames", self.edgeFeatureNames)
+
         cell_IDs = event_data['cluster_cell_ID'][event_ind][cluster_ind]
         cell_IDmap = self.sorter[np.searchsorted(self.cellGeo_ID, cell_IDs, sorter=self.sorter)]
 
@@ -103,7 +107,7 @@ class GraphDataGenerator:
     def get_edges(self, cluster_num_nodes, cell_IDmap):
         """
         Reading edge features
-        Resturns senders, receivers, and edges
+        Returns senders, receivers, and edges
         """
 
         edge_inds = np.zeros((cluster_num_nodes, self.num_edgeFeatures))
@@ -143,8 +147,12 @@ class GraphDataGenerator:
 
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
+                    cluster_E = event_data['cluster_E'][event_ind][i]
 
                     if cluster_calib_E is None:
+                        continue
+
+                    if cluster_E < 0.5:
                         continue
 
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
@@ -168,8 +176,12 @@ class GraphDataGenerator:
 
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
+                    cluster_E = event_data['cluster_E'][event_ind][i]
 
                     if cluster_calib_E is None:
+                        continue
+
+                    if cluster_E < 0.5:
                         continue
 
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
