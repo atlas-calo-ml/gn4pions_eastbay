@@ -7,7 +7,7 @@ data:
   num_procs: 32
   preprocess: True
   output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/tracks_withcuts/
-  already_preprocessed: True
+  already_preprocessed: False
 model:
   block_type: graphnet
   concat_input: true
