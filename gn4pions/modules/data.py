@@ -12,6 +12,9 @@ from multiprocessing import Process, Queue, set_start_method
 import compress_pickle as pickle
 from scipy.stats import circmean
 import random
+import itertools
+
+import pandas as pd
 
 # Cell
 class GraphDataGenerator:
@@ -50,11 +53,9 @@ class GraphDataGenerator:
         self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
         self.num_nodeFeatures = len(self.nodeFeatureNames)
         self.num_edgeFeatures = len(self.edgeFeatureNames)
-
         self.cellGeo_data = self.cellGeo_data.arrays(library='np')
         self.cellGeo_ID = self.cellGeo_data['cell_geo_ID'][0]
         self.sorter = np.argsort(self.cellGeo_ID)
-
         self.batch_size = batch_size
         self.shuffle = shuffle
 
@@ -66,6 +67,9 @@ class GraphDataGenerator:
         if self.preprocess and self.output_dir is not None:
             os.makedirs(self.output_dir, exist_ok=True)
             self.preprocess_data()
+
+#         print(self.nodeFeatureNames)
+#         print(self.edgeFeatureNames)
 
     def get_cluster_calib(self, event_data, event_ind, cluster_ind):
         """ Reading cluster calibration energy """
@@ -80,15 +84,13 @@ class GraphDataGenerator:
     def get_nodes(self, event_data, event_ind, cluster_ind):
         """ Reading Node features """
 
-#         print("geoFeatureNames", self.geoFeatureNames)
-#         print("nodeFeatureNames", self.nodeFeatureNames)
-#         print("edgeFeatureNames", self.edgeFeatureNames)
-
         cell_IDs = event_data['cluster_cell_ID'][event_ind][cluster_ind]
         cell_IDmap = self.sorter[np.searchsorted(self.cellGeo_ID, cell_IDs, sorter=self.sorter)]
 
         nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
-        global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])
+#         print('cluster_E', event_data['cluster_E'][event_ind][cluster_ind])
+#         print('truthPartE', event_data['truthPartE'][event_ind][0])
+        global_node = np.log10(event_data['truthPartE'][event_ind][0]) # prev: cluster_E (with cluster index)
 
         # Scaling the cell_geo_sampling by 28
         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap]/28.)
@@ -102,7 +104,68 @@ class GraphDataGenerator:
         nodes = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
         cluster_num_nodes = len(nodes)
 
+        # add dummy placeholder nodes for track features (not used in cluster cell nodes)
+        nodes = np.hstack((nodes, np.zeros((cluster_num_nodes, 4))))
+
         return nodes, np.array([global_node]), cluster_num_nodes, cell_IDmap
+
+
+
+    # WIP ----------------------------------------------------------------
+
+
+
+    def get_track_node(self, event_data, event_index, track_index):
+        """
+        Creates node features for tracks
+        Inputs:
+
+        Returns:
+            1 Dimensional array of node features for a single node
+                NOTE the cluster get_node function is a 2D array of multiple nodes
+                This function is used in a for loop so the end result is a 2D array
+        """
+        node_features = np.array(event_data["trackPt"][event_index][track_index])
+        node_features = np.append(node_features, event_data["trackZ0"][event_index][track_index])
+        node_features = np.append(node_features, event_data["trackEta_EMB2"][event_index][track_index])
+        node_features = np.append(node_features, event_data["trackPhi_EMB2"][event_index][track_index])
+        node_features = np.reshape(node_features, (len(node_features))).T
+
+        # add dummy placeholder nodes for track features (not used in track cell nodes)
+        node_features = np.hstack((np.zeros(7), node_features))
+
+        return node_features
+
+    def get_track_edges(self, num_track_nodes, start_index):
+        """
+        Creates the edge senders and recievers and edge features
+        Inputs:
+        (int) num_track_nodes: number of track nodes
+        (int) start_index: the index of senders/recievers to start with. We should start with num_cluster_edges+1 to avoid overlap
+
+        Returns:
+        (np.array) edge_features:
+        (np.array) senders:
+        (np.array) recievers:
+        """
+        # Full Connected tracks
+        # since we are fully connected, the order of senders and recievers doesn't matter
+        # we just need to count each node - edges will have a placeholder feature
+        connections = list(itertools.permutations(range(start_index, start_index + num_track_nodes),2))
+        for i in range(5):
+            connections.append((i, i))
+
+        senders = np.array([x[0] for x in connections])
+        recievers = np.array([x[0] for x in connections])
+        edge_features = np.zeros((len(connections), 10))
+
+        return senders, recievers, edge_features
+
+
+
+    # end WIP ----------------------------------------------------------------
+
+
 
     def get_edges(self, cluster_num_nodes, cell_IDmap):
         """
@@ -135,10 +198,8 @@ class GraphDataGenerator:
         while file_num < self.num_files:
             print(f"Processing file number {file_num}")
             file = self.pion_file_list[file_num]
-            event_tree = ur.open(file)['EventTree']
-            num_events = event_tree.num_entries
-
-            event_data = event_tree.arrays(library='np')
+            event_data = np.load(file, allow_pickle=True).item()
+            num_events = len(event_data[[key for key in event_data.keys()][0]])
 
             preprocessed_data = []
 
@@ -147,16 +208,29 @@ class GraphDataGenerator:
 
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
-                    cluster_E = event_data['cluster_E'][event_ind][i]
 
                     if cluster_calib_E is None:
                         continue
 
-                    if cluster_E < 0.5:
-                        continue
-
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
+
+
+# WIP add track nodes and edges ----------------------------------------------------------------
+                    track_nodes = np.empty((0, 11))
+                    num_tracks = event_data['nTrack'][event_ind]
+                    for track_index in range(num_tracks):
+                        np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
+
+                    track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+
+                    # append on the track nodes and edges to the cluster ones
+                    nodes = np.append(nodes, np.array(track_nodes), axis=0)
+                    edges = np.append(edges, track_edge_features, axis=0)
+                    senders = np.append(senders, track_senders, axis=0)
+                    receivers = np.append(receivers, track_receivers, axis=0)
+
+                    # end WIP ----------------------------------------------------------------
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
@@ -166,26 +240,35 @@ class GraphDataGenerator:
                     preprocessed_data.append((graph, target))
 
             file = self.pi0_file_list[file_num]
-            event_tree = ur.open(file)['EventTree']
-            num_events = event_tree.num_entries
-
-            event_data = event_tree.arrays(library='np')
+            event_data = np.load(file, allow_pickle=True).item()
+            num_events = len(event_data[[key for key in event_data.keys()][0]])
 
             for event_ind in range(num_events):
                 num_clusters = event_data['nCluster'][event_ind]
 
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
-                    cluster_E = event_data['cluster_E'][event_ind][i]
 
                     if cluster_calib_E is None:
                         continue
 
-                    if cluster_E < 0.5:
-                        continue
-
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
+
+                    # WIP add track nodes and edges ----------------------------------------------------------------
+                    track_nodes = np.empty((0, 11))
+                    num_tracks = event_data['nTrack'][event_ind]
+                    for track_index in range(num_tracks):
+                        np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
+
+                    track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+
+                    nodes = np.append(nodes, np.array(track_nodes), axis=0)
+                    edges = np.append(edges, track_edge_features, axis=0)
+                    senders = np.append(senders, track_senders, axis=0)
+                    receivers = np.append(receivers, track_receivers, axis=0)
+
+                    # end WIP ----------------------------------------------------------------
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
