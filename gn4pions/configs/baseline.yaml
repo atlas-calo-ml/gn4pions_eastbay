@@ -6,7 +6,7 @@ data:
   shuffle: False
   num_procs: 32
   preprocess: True
-  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
+  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/baseline_cluster_only
   already_preprocessed: True
 model:
   block_type: graphnet

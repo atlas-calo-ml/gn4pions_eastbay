@@ -53,11 +53,9 @@ class GraphDataGenerator:
         self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
         self.num_nodeFeatures = len(self.nodeFeatureNames)
         self.num_edgeFeatures = len(self.edgeFeatureNames)
-
         self.cellGeo_data = self.cellGeo_data.arrays(library='np')
         self.cellGeo_ID = self.cellGeo_data['cell_geo_ID'][0]
         self.sorter = np.argsort(self.cellGeo_ID)
-
         self.batch_size = batch_size
         self.shuffle = shuffle
 
@@ -69,6 +67,9 @@ class GraphDataGenerator:
         if self.preprocess and self.output_dir is not None:
             os.makedirs(self.output_dir, exist_ok=True)
             self.preprocess_data()
+
+#         print(self.nodeFeatureNames)
+#         print(self.edgeFeatureNames)
 
     def get_cluster_calib(self, event_data, event_ind, cluster_ind):
         """ Reading cluster calibration energy """
@@ -129,9 +130,9 @@ class GraphDataGenerator:
                 This function is used in a for loop so the end result is a 2D array
         """
         node_features = np.array(event_data["trackPt"][event_index][track_index])
-        node_features = np.append(node_features, event_data["trackMass"][event_index][track_index])
-        node_features = np.append(node_features, event_data["trackEta"][event_index][track_index])
-        node_features = np.append(node_features, event_data["trackPhi"][event_index][track_index])
+        node_features = np.append(node_features, event_data["trackZ0"][event_index][track_index])
+        node_features = np.append(node_features, event_data["trackEta_EMB2"][event_index][track_index])
+        node_features = np.append(node_features, event_data["trackPhi_EMB2"][event_index][track_index])
         node_features = np.reshape(node_features, (len(node_features))).T
 
 #         print("node_features before", node_features)
@@ -206,10 +207,8 @@ class GraphDataGenerator:
         while file_num < self.num_files:
             print(f"Processing file number {file_num}")
             file = self.pion_file_list[file_num]
-            event_tree = ur.open(file)['EventTree']
-            num_events = event_tree.num_entries
-
-            event_data = event_tree.arrays(library='np')
+            event_data = np.load(file, allow_pickle=True).item()
+            num_events = len(event_data[[key for key in event_data.keys()][0]])
 
             preprocessed_data = []
 
@@ -256,8 +255,6 @@ class GraphDataGenerator:
 
                     # end WIP ----------------------------------------------------------------
 
-
-
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
                         'edges': edges.astype(np.float32)}
@@ -266,10 +263,8 @@ class GraphDataGenerator:
                     preprocessed_data.append((graph, target))
 
             file = self.pi0_file_list[file_num]
-            event_tree = ur.open(file)['EventTree']
-            num_events = event_tree.num_entries
-
-            event_data = event_tree.arrays(library='np')
+            event_data = np.load(file, allow_pickle=True).item()
+            num_events = len(event_data[[key for key in event_data.keys()][0]])
 
             for event_ind in range(num_events):
                 num_clusters = event_data['nCluster'][event_ind]
@@ -282,10 +277,6 @@ class GraphDataGenerator:
 
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
-
-
-
-
 
                     # WIP add track nodes and edges ----------------------------------------------------------------
                     track_nodes = np.empty((0, 11))
@@ -309,10 +300,6 @@ class GraphDataGenerator:
 #                     raise Exception("asdf")
 
                     # end WIP ----------------------------------------------------------------
-
-
-
-
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),

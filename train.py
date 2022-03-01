@@ -27,7 +27,7 @@ from gn4pions.modules.utils import convert_to_tuple
 sns.set_context('poster')
 
 # Loading model config
-config_file = 'gn4pions/configs/test.yaml' # for a quick test
+config_file = 'gn4pions/configs/tracks_test.yaml' # for a quick test
 # config_file = 'gn4pions/configs/baseline.yaml' # for actual training
 config = yaml.load(open(config_file), Loader=yaml.FullLoader)
 
@@ -60,8 +60,8 @@ os.makedirs(save_dir, exist_ok=True)
 yaml.dump(config, open(save_dir + '/config.yaml', 'w'))
 
 # Read data and create data generators
-pi0_files = np.sort(glob.glob(data_dir+'*pi0*/*root'))
-pion_files = np.sort(glob.glob(data_dir+'*pion*/*root'))
+pi0_files = np.sort(glob.glob(data_dir+'*pi0*/*.npy'))
+pion_files = np.sort(glob.glob(data_dir+'*pion*/*.npy'))
 
 train_start = 0
 train_end = train_start + num_train_files
