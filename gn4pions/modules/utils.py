@@ -17,6 +17,8 @@ def convert_to_tuple(graphs):
     n_node = []
     n_edge = []
     offset = 0
+    cluster_energies = []
+    cluster_etas = []
 
     for graph in graphs:
         nodes.append(graph['nodes'])
@@ -26,6 +28,8 @@ def convert_to_tuple(graphs):
         receivers.append(graph['receivers'] + offset)
         n_node.append(graph['nodes'].shape[:1])
         n_edge.append(graph['edges'].shape[:1])
+        cluster_energies.append(graph['cluster_E'])
+        cluster_etas.append(graph['cluster_eta'])
 
         offset += len(graph['nodes'])
 
@@ -47,4 +51,4 @@ def convert_to_tuple(graphs):
             n_edge=n_edge
         )
 
-    return graph
+    return graph, cluster_energies, cluster_etas

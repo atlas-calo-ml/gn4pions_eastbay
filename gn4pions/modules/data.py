@@ -68,18 +68,25 @@ class GraphDataGenerator:
             os.makedirs(self.output_dir, exist_ok=True)
             self.preprocess_data()
 
-#         print(self.nodeFeatureNames)
-#         print(self.edgeFeatureNames)
+    def get_truth_particle_E(self, event_data, event_ind):
+        """ Reading truth particle energy """
+
+        truth_particle_E = event_data['truthPartE'][event_ind][0] # first one is the pion!
+        return np.log10(truth_particle_E)
 
     def get_cluster_calib(self, event_data, event_ind, cluster_ind):
         """ Reading cluster calibration energy """
-
         cluster_calib_E = event_data['cluster_ENG_CALIB_TOT'][event_ind][cluster_ind]
 
         if cluster_calib_E <= 0:
             return None
 
         return np.log10(cluster_calib_E)
+
+    def get_cluster_eta(self, event_data, event_ind, cluster_ind):
+        """ Reading cluster eta """
+        cluster_eta = event_data['cluster_Eta'][event_ind][cluster_ind]
+        return cluster_eta
 
     def get_nodes(self, event_data, event_ind, cluster_ind):
         """ Reading Node features """
@@ -88,10 +95,7 @@ class GraphDataGenerator:
         cell_IDmap = self.sorter[np.searchsorted(self.cellGeo_ID, cell_IDs, sorter=self.sorter)]
 
         nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
-#         print('cluster_E', event_data['cluster_E'][event_ind][cluster_ind])
-#         print('truthPartE', event_data['truthPartE'][event_ind][0])
         global_node = np.log10(event_data['truthPartE'][event_ind][0]) # prev: cluster_E (with cluster index)
-
         # Scaling the cell_geo_sampling by 28
         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap]/28.)
         for f in self.nodeFeatureNames[2:4]:
@@ -109,11 +113,7 @@ class GraphDataGenerator:
 
         return nodes, np.array([global_node]), cluster_num_nodes, cell_IDmap
 
-
-
     # WIP ----------------------------------------------------------------
-
-
 
     def get_track_node(self, event_data, event_index, track_index):
         """
@@ -161,11 +161,7 @@ class GraphDataGenerator:
 
         return senders, recievers, edge_features
 
-
-
     # end WIP ----------------------------------------------------------------
-
-
 
     def get_edges(self, cluster_num_nodes, cell_IDmap):
         """
@@ -205,16 +201,17 @@ class GraphDataGenerator:
 
             for event_ind in range(num_events):
                 num_clusters = event_data['nCluster'][event_ind]
+                truth_particle_E = self.get_truth_particle_E(event_data, event_ind)
 
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
-
                     if cluster_calib_E is None:
                         continue
 
+                    cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
+
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
-
 
 # WIP add track nodes and edges ----------------------------------------------------------------
                     track_nodes = np.empty((0, 11))
@@ -234,8 +231,8 @@ class GraphDataGenerator:
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-                        'edges': edges.astype(np.float32)}
-                    target = np.reshape([cluster_calib_E.astype(np.float32), 1], [1,2])
+                        'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E.astype(np.float32), 'cluster_eta': cluster_eta.astype(np.float32)}
+                    target = np.reshape([global_node.astype(np.float32), 1], [1,2])
 
                     preprocessed_data.append((graph, target))
 
@@ -245,12 +242,14 @@ class GraphDataGenerator:
 
             for event_ind in range(num_events):
                 num_clusters = event_data['nCluster'][event_ind]
+                truth_particle_E = self.get_truth_particle_E(event_data, event_ind)
 
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
-
                     if cluster_calib_E is None:
                         continue
+
+                    cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
 
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
@@ -272,8 +271,8 @@ class GraphDataGenerator:
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-                        'edges': edges.astype(np.float32)}
-                    target = np.reshape([cluster_calib_E.astype(np.float32), 0], [1,2])
+                        'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E, 'cluster_eta': cluster_eta}
+                    target = np.reshape([global_node.astype(np.float32), 0], [1,2])
 
                     preprocessed_data.append((graph, target))
 
@@ -320,7 +319,6 @@ class GraphDataGenerator:
 
         if len(batch_graphs) > 0:
             batch_targets = np.reshape(np.array(batch_targets), [-1,2]).astype(np.float32)
-
             batch_queue.put((batch_graphs, batch_targets))
 
     def worker(self, worker_id, batch_queue):

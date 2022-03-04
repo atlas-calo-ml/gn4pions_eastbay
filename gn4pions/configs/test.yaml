@@ -1,13 +1,14 @@
 data: 
-  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
-  num_train_files: 10
-  num_val_files: 10
+  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts/
+  cell_geo_file: /clusterfs/ml4hep/mpettee/ml4pions/data/cell_geo.root
+  num_train_files: 5
+  num_val_files: 5
   batch_size: 1024
   shuffle: False
   num_procs: 32
   preprocess: True
-  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/
-  already_preprocessed: True
+  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts/preprocessed/
+  already_preprocessed: False
 model:
   block_type: graphnet
   concat_input: true
@@ -21,7 +22,7 @@ model:
 training: 
   alpha: .75 
   epochs: 10
-  gpu: 0
+  gpu: 1
   learning_rate: 0.001
   log_freq: 100
-  save_dir: results/ 
+  save_dir: results/no_cuts/ 
