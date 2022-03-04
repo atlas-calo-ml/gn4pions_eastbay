@@ -41,6 +41,7 @@ if __name__ == "__main__":
     # Data config
     data_config = config['data']
     data_dir = data_config['data_dir']
+    cell_geo_file = data_config['cell_geo_file']
     num_train_files = data_config['num_train_files']
     num_val_files = data_config['num_val_files']
     batch_size = data_config['batch_size']
@@ -60,6 +61,9 @@ if __name__ == "__main__":
     learning_rate = train_config['learning_rate']
     alpha = train_config['alpha']
     os.environ['CUDA_VISIBLE_DEVICES'] = str(train_config['gpu'])
+    physical_devices = tf.config.list_physical_devices('GPU') 
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
     log_freq = train_config['log_freq']
     save_dir = train_config['save_dir'] + config_file.replace('.yaml','').split('/')[-1] + '_' + time.strftime("%Y%m%d")
 
@@ -67,8 +71,8 @@ if __name__ == "__main__":
     yaml.dump(config, open(save_dir + '/config.yaml', 'w'))
 
     # Read data and create data generators
-    pi0_files = np.sort(glob.glob(data_dir+'pi0_files_cuts/*.npy'))
-    pion_files = np.sort(glob.glob(data_dir+'pion_files_cuts/*.npy'))
+    pi0_files = np.sort(glob.glob(data_dir+'pi0_files/*.npy'))
+    pion_files = np.sort(glob.glob(data_dir+'pion_files/*.npy'))
 
     train_start = 0
     train_end = train_start + num_train_files
@@ -103,7 +107,7 @@ if __name__ == "__main__":
     # Will preprocess data if it doesnt find pickled files
     data_gen_train = GraphDataGenerator(pi0_file_list=pi0_train_files,
                                         pion_file_list=pion_train_files,
-                                        cellGeo_file=data_dir+'cell_geo.root',
+                                        cellGeo_file=cell_geo_file,
                                         batch_size=batch_size,
                                         shuffle=shuffle,
                                         num_procs=num_procs,
@@ -114,7 +118,7 @@ if __name__ == "__main__":
     # Will preprocess data if it doesnt find pickled files
     data_gen_val = GraphDataGenerator(pi0_file_list=pi0_val_files,
                                       pion_file_list=pion_val_files,
-                                      cellGeo_file=data_dir+'cell_geo.root',
+                                      cellGeo_file=cell_geo_file,
                                       batch_size=batch_size,
                                       shuffle=shuffle,
                                       num_procs=num_procs,
@@ -124,9 +128,9 @@ if __name__ == "__main__":
     # Get batch of data
     def get_batch(data_iter):
         for graphs, targets in data_iter:
-            graphs = convert_to_tuple(graphs)
+            graphs, energies, etas = convert_to_tuple(graphs)
             targets = tf.convert_to_tensor(targets)
-            yield graphs, targets
+            yield graphs, targets, energies, etas
 
     # Define loss function        
     mae_loss = tf.keras.losses.MeanAbsoluteError()
@@ -138,7 +142,7 @@ if __name__ == "__main__":
         return regress_loss, class_loss, combined_loss
 
     # Get a sample graph for tf.function decorator
-    samp_graph, samp_target = next(get_batch(data_gen_train.generator()))
+    samp_graph, samp_target, samp_e, samp_eta = next(get_batch(data_gen_train.generator()))
     data_gen_train.kill_procs()
     graph_spec = utils_tf.specs_from_graphs_tuple(samp_graph, True, True, True)
 
@@ -206,7 +210,7 @@ if __name__ == "__main__":
         # Train
         print('Training...')
         start = time.time()
-        for i, (graph_data_tr, targets_tr) in enumerate(get_batch(data_gen_train.generator())):
+        for i, (graph_data_tr, targets_tr, energies_tr, etas_tr) in enumerate(get_batch(data_gen_train.generator())):
             losses_tr_rg, losses_tr_cl, losses_tr = train_step(graph_data_tr, targets_tr)
 
             training_loss.append(losses_tr.numpy())
@@ -232,17 +236,20 @@ if __name__ == "__main__":
         all_targets = []
         all_outputs = []
         all_energies = []
+        all_etas = []
         start = time.time()
-        for i, (graph_data_val, targets_val) in enumerate(get_batch(data_gen_val.generator())):
+        for i, (graph_data_val, targets_val, energies_val, etas_val) in enumerate(get_batch(data_gen_val.generator())):
             losses_val_rg, losses_val_cl, losses_val, regress_vals, class_vals = val_step(graph_data_val, targets_val)
 
             targets_val = targets_val.numpy()
             regress_vals = regress_vals.numpy()
             class_vals = class_vals.numpy()
 
+            ### These variables are stored as log_10, so need to exponentiate them again here 
             targets_val[:,0] = 10**targets_val[:,0]
             regress_vals = 10**regress_vals
             class_vals =  tf.math.sigmoid(class_vals)
+            energy = 10**graph_data_val.globals 
 
             output_vals = np.hstack([regress_vals, class_vals])
 
@@ -252,6 +259,8 @@ if __name__ == "__main__":
 
             all_targets.append(targets_val)
             all_outputs.append(output_vals)
+            all_energies.append([10**energy for energy in energies_val])
+            all_etas.append(etas_val)
 
             if not (i-1)%log_freq:
                 end = time.time()
@@ -266,11 +275,12 @@ if __name__ == "__main__":
 
         all_targets = np.concatenate(all_targets)
         all_outputs = np.concatenate(all_outputs)
+        all_energies = np.concatenate(all_energies)
+        all_etas = np.concatenate(all_etas)
 
         val_loss_epoch.append(val_loss)
         val_loss_regress_epoch.append(val_loss_regress)
         val_loss_class_epoch.append(val_loss_class)
-
 
         # Book keeping
         val_mins = int((epoch_end - training_end)/60)
@@ -298,7 +308,8 @@ if __name__ == "__main__":
             np.savez(save_dir+'/predictions', 
                     targets=all_targets, 
                     outputs=all_outputs,
-                    energies=all_energies)
+                    energies=all_energies,
+                    etas=all_etas)
             checkpoint.save(checkpoint_prefix)
         else: 
             print(f'Loss didnt decrease from {curr_loss:.4f}')
