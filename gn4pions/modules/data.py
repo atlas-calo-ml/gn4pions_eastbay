@@ -74,6 +74,12 @@ class GraphDataGenerator:
         truth_particle_E = event_data['truthPartE'][event_ind][0] # first one is the pion!
         return np.log10(truth_particle_E)
 
+    def get_cluster_EM_prob(self, event_data, event_ind, cluster_ind):
+        """ Reading cluster EM probability """
+
+        cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][cluster_ind]
+        return cluster_EM_prob
+
     def get_cluster_calib(self, event_data, event_ind, cluster_ind):
         """ Reading cluster calibration energy """
         cluster_calib_E = event_data['cluster_ENG_CALIB_TOT'][event_ind][cluster_ind]
@@ -205,6 +211,8 @@ class GraphDataGenerator:
 
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
+                    cluster_EM_prob = self.get_cluster_EM_prob(event_data, event_ind, i)
+
                     if cluster_calib_E is None:
                         continue
 
@@ -231,7 +239,8 @@ class GraphDataGenerator:
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-                        'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E.astype(np.float32), 'cluster_eta': cluster_eta.astype(np.float32)}
+                        'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E.astype(np.float32),
+                        'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32)}
                     target = np.reshape([global_node.astype(np.float32), 1], [1,2])
 
                     preprocessed_data.append((graph, target))
@@ -246,6 +255,8 @@ class GraphDataGenerator:
 
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
+                    cluster_EM_prob = self.get_cluster_EM_prob(event_data, event_ind, i)
+
                     if cluster_calib_E is None:
                         continue
 
@@ -271,7 +282,8 @@ class GraphDataGenerator:
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-                        'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E, 'cluster_eta': cluster_eta}
+                        'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E.astype(np.float32),
+                             'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32)}
                     target = np.reshape([global_node.astype(np.float32), 0], [1,2])
 
                     preprocessed_data.append((graph, target))
