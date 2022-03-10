@@ -7,7 +7,7 @@ data:
   shuffle: False
   num_procs: 32
   preprocess: True
-  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts/preprocessed/
+  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts_clusters_only/preprocessed/
   already_preprocessed: False
 model:
   block_type: graphnet
@@ -25,4 +25,4 @@ training:
   gpu: 1
   learning_rate: 0.001
   log_freq: 100
-  save_dir: results/no_cuts/ 
+  save_dir: results/no_cuts_clusters_only/ 

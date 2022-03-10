@@ -101,8 +101,8 @@ class GraphDataGenerator:
         cell_IDmap = self.sorter[np.searchsorted(self.cellGeo_ID, cell_IDs, sorter=self.sorter)]
 
         nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
-        global_node = np.log10(event_data['truthPartE'][event_ind][0]) # prev: cluster_E (with cluster index)
-        # Scaling the cell_geo_sampling by 28
+#         global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])  ### WITHOUT TRACKS
+      global_node = np.log10(event_data['truthPartE'][event_ind][0])  ### WITH TRACKS
         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap]/28.)
         for f in self.nodeFeatureNames[2:4]:
             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
