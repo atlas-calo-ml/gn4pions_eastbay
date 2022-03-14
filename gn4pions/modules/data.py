@@ -80,6 +80,12 @@ class GraphDataGenerator:
         cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][cluster_ind]
         return cluster_EM_prob
 
+    def get_cluster_LC_E(self, event_data, event_ind, cluster_ind):
+        """ Reading cluster LCCalib energy """
+
+        cluster_LC_E = event_data['cluster_E_LCCalib'][event_ind][cluster_ind]
+        return np.log10(cluster_LC_E)
+
     def get_cluster_calib(self, event_data, event_ind, cluster_ind):
         """ Reading cluster calibration energy """
         cluster_calib_E = event_data['cluster_ENG_CALIB_TOT'][event_ind][cluster_ind]
@@ -102,7 +108,7 @@ class GraphDataGenerator:
 
         nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
 #         global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])  ### WITHOUT TRACKS
-      global_node = np.log10(event_data['truthPartE'][event_ind][0])  ### WITH TRACKS
+        global_node = np.log10(event_data['truthPartE'][event_ind][0])  ### WITH TRACKS
         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap]/28.)
         for f in self.nodeFeatureNames[2:4]:
             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
@@ -210,8 +216,11 @@ class GraphDataGenerator:
                 truth_particle_E = self.get_truth_particle_E(event_data, event_ind)
 
                 for i in range(num_clusters):
+                    if event_data['dR_pass'][event_ind][i] == False:
+                        continue
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
                     cluster_EM_prob = self.get_cluster_EM_prob(event_data, event_ind, i)
+                    cluster_LC_E = self.get_cluster_LC_E(event_data, event_ind, i)
 
                     if cluster_calib_E is None:
                         continue
@@ -240,7 +249,8 @@ class GraphDataGenerator:
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
                         'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E.astype(np.float32),
-                        'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32)}
+                        'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
+                        'cluster_LC_E': cluster_LC_E.astype(np.float32)}
                     target = np.reshape([global_node.astype(np.float32), 1], [1,2])
 
                     preprocessed_data.append((graph, target))
@@ -256,6 +266,10 @@ class GraphDataGenerator:
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
                     cluster_EM_prob = self.get_cluster_EM_prob(event_data, event_ind, i)
+                    cluster_LC_E = self.get_cluster_LC_E(event_data, event_ind, i)
+
+                    if event_data['dR_pass'][event_ind][i] == False:
+                        continue
 
                     if cluster_calib_E is None:
                         continue
@@ -283,7 +297,8 @@ class GraphDataGenerator:
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
                         'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E.astype(np.float32),
-                             'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32)}
+                        'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
+                        'cluster_LC_E': cluster_LC_E.astype(np.float32)}
                     target = np.reshape([global_node.astype(np.float32), 0], [1,2])
 
                     preprocessed_data.append((graph, target))

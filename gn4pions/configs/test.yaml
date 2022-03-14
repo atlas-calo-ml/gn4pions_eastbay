@@ -1,5 +1,5 @@
 data: 
-  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts/
+  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/onetrack_multicluster/
   cell_geo_file: /clusterfs/ml4hep/mpettee/ml4pions/data/cell_geo.root
   num_train_files: 5
   num_val_files: 5
@@ -7,7 +7,7 @@ data:
   shuffle: False
   num_procs: 32
   preprocess: True
-  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts/preprocessed/
+  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/onetrack_multicluster/preprocessed/
   already_preprocessed: False
 model:
   block_type: graphnet
@@ -25,4 +25,4 @@ training:
   gpu: 1
   learning_rate: 0.001
   log_freq: 100
-  save_dir: results/no_cuts/ 
+  save_dir: results/onetrack_multicluster/ 

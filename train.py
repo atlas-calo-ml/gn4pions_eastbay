@@ -128,9 +128,9 @@ if __name__ == "__main__":
     # Get batch of data
     def get_batch(data_iter):
         for graphs, targets in data_iter:
-            graphs, energies, etas, em_probs = convert_to_tuple(graphs)
+            graphs, energies, etas, em_probs, lc_es = convert_to_tuple(graphs)
             targets = tf.convert_to_tensor(targets)
-            yield graphs, targets, energies, etas, em_probs
+            yield graphs, targets, energies, etas, em_probs, lc_es
 
     # Define loss function        
     mae_loss = tf.keras.losses.MeanAbsoluteError()
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         return regress_loss, class_loss, combined_loss
 
     # Get a sample graph for tf.function decorator
-    samp_graph, samp_target, samp_e, samp_eta, samp_em_prob = next(get_batch(data_gen_train.generator()))
+    samp_graph, samp_target, samp_e, samp_eta, samp_em_prob, samp_lc_e = next(get_batch(data_gen_train.generator()))
     data_gen_train.kill_procs()
     graph_spec = utils_tf.specs_from_graphs_tuple(samp_graph, True, True, True)
 
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         # Train
         print('Training...')
         start = time.time()
-        for i, (graph_data_tr, targets_tr, energies_tr, etas_tr, em_probs_tr) in enumerate(get_batch(data_gen_train.generator())):
+        for i, (graph_data_tr, targets_tr, energies_tr, etas_tr, em_probs_tr, lc_es_tr) in enumerate(get_batch(data_gen_train.generator())):
             losses_tr_rg, losses_tr_cl, losses_tr = train_step(graph_data_tr, targets_tr)
 
             training_loss.append(losses_tr.numpy())
@@ -238,8 +238,9 @@ if __name__ == "__main__":
         all_energies = []
         all_etas = []
         all_em_probs = []
+        all_lc_es = []
         start = time.time()
-        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val) in enumerate(get_batch(data_gen_val.generator())):
+        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val, lc_es_val) in enumerate(get_batch(data_gen_val.generator())):
             losses_val_rg, losses_val_cl, losses_val, regress_vals, class_vals = val_step(graph_data_val, targets_val)
 
             targets_val = targets_val.numpy()
@@ -263,6 +264,7 @@ if __name__ == "__main__":
             all_energies.append([10**energy for energy in energies_val])
             all_etas.append(etas_val)
             all_em_probs.append(em_probs_val)
+            all_lc_es.append([10**energy for energy in lc_es_val])
 
             if not (i-1)%log_freq:
                 end = time.time()
@@ -280,6 +282,7 @@ if __name__ == "__main__":
         all_energies = np.concatenate(all_energies)
         all_etas = np.concatenate(all_etas)
         all_em_probs = np.concatenate(all_em_probs)
+        all_lc_es = np.concatenate(all_lc_es)
 
         val_loss_epoch.append(val_loss)
         val_loss_regress_epoch.append(val_loss_regress)
@@ -313,7 +316,8 @@ if __name__ == "__main__":
                     outputs=all_outputs,
                     energies=all_energies,
                     etas=all_etas,
-                    em_probs=all_em_probs)
+                    em_probs=all_em_probs,
+                    lc_es=all_lc_es)
             checkpoint.save(checkpoint_prefix)
         else: 
             print(f'Loss didnt decrease from {curr_loss:.4f}')
