@@ -34,8 +34,8 @@ def responsePlot(x, y, figfile='', statistic='median',
         plt.xscale('log')
         plt.ylim(0, 1.75)
         plt.xlim(0.3, )
-        pu.ampl.set_xlabel(xlabel)
-        pu.ampl.set_ylabel(ylabel, fontsize=24)
+        pu.ampl.set_xlabel(xlabel, fontsize=20)
+        pu.ampl.set_ylabel(ylabel, fontsize=20)
         # ampl.set_zlabel('Clusters')
         cb = plt.colorbar()
         cb.ax.set_ylabel('Clusters')
@@ -84,8 +84,8 @@ def resolutionPlot(x, y, figfile='', statistic='std',
     plt.xscale('log')
     plt.xlim(0.1, 1000)
     plt.ylim(0,0.1)
-    pu.ampl.set_xlabel(xlabel)
-    pu.ampl.set_ylabel(ylabel)
+    pu.ampl.set_xlabel(xlabel, fontsize=20)
+    pu.ampl.set_ylabel(ylabel, fontsize=20)
 
     pu.drawLabels(fig, atlas_x, atlas_y, simulation, textlist)
 

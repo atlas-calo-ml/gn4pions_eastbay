@@ -1,5 +1,5 @@
 data: 
-  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts/
+  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts_clusters_and_tracks/
   cell_geo_file: /clusterfs/ml4hep/mpettee/ml4pions/data/cell_geo.root
   num_train_files: 400
   num_val_files: 100
@@ -7,7 +7,7 @@ data:
   shuffle: False
   num_procs: 32
   preprocess: True
-  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts_clusters_only/preprocessed/
+  output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts_clusters_and_tracks_hadweight/preprocessed/
   already_preprocessed: False
 model:
   block_type: graphnet
@@ -16,13 +16,13 @@ model:
   global_block_opt: {use_edges: false, use_globals: true, use_nodes: true}
   latent_size: 64
   node_block_opt: {use_globals: true, use_nodes: true, use_received_edges: true, use_sent_edges: false}
-  num_blocks: 4
+  num_blocks: 6
   num_layers: 4
   reducer: mean
 training: 
   alpha: 0.75
-  epochs: 10
-  gpu: 1
+  epochs: 2
+  gpu: 0
   learning_rate: 0.001
   log_freq: 100
-  save_dir: results/no_cuts_clusters_only/ 
+  save_dir: results/no_cuts_clusters_and_tracks_hadweight/

@@ -68,24 +68,6 @@ class GraphDataGenerator:
             os.makedirs(self.output_dir, exist_ok=True)
             self.preprocess_data()
 
-    def get_truth_particle_E(self, event_data, event_ind):
-        """ Reading truth particle energy """
-
-        truth_particle_E = event_data['truthPartE'][event_ind][0] # first one is the pion!
-        return np.log10(truth_particle_E)
-
-    def get_cluster_EM_prob(self, event_data, event_ind, cluster_ind):
-        """ Reading cluster EM probability """
-
-        cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][cluster_ind]
-        return cluster_EM_prob
-
-    def get_cluster_LC_E(self, event_data, event_ind, cluster_ind):
-        """ Reading cluster LCCalib energy """
-
-        cluster_LC_E = event_data['cluster_E_LCCalib'][event_ind][cluster_ind]
-        return np.log10(cluster_LC_E)
-
     def get_cluster_calib(self, event_data, event_ind, cluster_ind):
         """ Reading cluster calibration energy """
         cluster_calib_E = event_data['cluster_ENG_CALIB_TOT'][event_ind][cluster_ind]
@@ -125,7 +107,7 @@ class GraphDataGenerator:
 
         return nodes, np.array([global_node]), cluster_num_nodes, cell_IDmap
 
-    # WIP ----------------------------------------------------------------
+    # track section ----------------------------------------------------------------
 
     def get_track_node(self, event_data, event_index, track_index):
         """
@@ -173,7 +155,7 @@ class GraphDataGenerator:
 
         return senders, recievers, edge_features
 
-    # end WIP ----------------------------------------------------------------
+    # end track section ----------------------------------------------------------------
 
     def get_edges(self, cluster_num_nodes, cell_IDmap):
         """
@@ -213,14 +195,15 @@ class GraphDataGenerator:
 
             for event_ind in range(num_events):
                 num_clusters = event_data['nCluster'][event_ind]
-                truth_particle_E = self.get_truth_particle_E(event_data, event_ind)
+                truth_particle_E = np.log10(event_data['truthPartE'][event_ind][0]) # first one is the pion!
 
                 for i in range(num_clusters):
                     if event_data['dR_pass'][event_ind][i] == False:
                         continue
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
-                    cluster_EM_prob = self.get_cluster_EM_prob(event_data, event_ind, i)
-                    cluster_LC_E = self.get_cluster_LC_E(event_data, event_ind, i)
+                    cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][i]
+                    cluster_E = np.log10(event_data['cluster_E'][event_ind][i])
+                    cluster_HAD_WEIGHT = event_data['cluster_HAD_WEIGHT'][event_ind][i]
 
                     if cluster_calib_E is None:
                         continue
@@ -230,7 +213,7 @@ class GraphDataGenerator:
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
 
-# WIP add track nodes and edges ----------------------------------------------------------------
+                # track section ----------------------------------------------------------------
                     track_nodes = np.empty((0, 11))
                     num_tracks = event_data['nTrack'][event_ind]
                     for track_index in range(num_tracks):
@@ -244,13 +227,13 @@ class GraphDataGenerator:
                     senders = np.append(senders, track_senders, axis=0)
                     receivers = np.append(receivers, track_receivers, axis=0)
 
-                    # end WIP ----------------------------------------------------------------
+                    # end track section ----------------------------------------------------------------
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-                        'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E.astype(np.float32),
+                        'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
                         'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
-                        'cluster_LC_E': cluster_LC_E.astype(np.float32)}
+                        'cluster_E': cluster_E.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32)}
                     target = np.reshape([global_node.astype(np.float32), 1], [1,2])
 
                     preprocessed_data.append((graph, target))
@@ -261,12 +244,13 @@ class GraphDataGenerator:
 
             for event_ind in range(num_events):
                 num_clusters = event_data['nCluster'][event_ind]
-                truth_particle_E = self.get_truth_particle_E(event_data, event_ind)
+                truth_particle_E = truth_particle_E = np.log10(event_data['truthPartE'][event_ind][0]) # first one is the pion!
 
                 for i in range(num_clusters):
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
-                    cluster_EM_prob = self.get_cluster_EM_prob(event_data, event_ind, i)
-                    cluster_LC_E = self.get_cluster_LC_E(event_data, event_ind, i)
+                    cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][i]
+                    cluster_E = np.log10(event_data['cluster_E'][event_ind][i])
+                    cluster_HAD_WEIGHT = event_data['cluster_HAD_WEIGHT'][event_ind][i]
 
                     if event_data['dR_pass'][event_ind][i] == False:
                         continue
@@ -279,7 +263,7 @@ class GraphDataGenerator:
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
 
-                    # WIP add track nodes and edges ----------------------------------------------------------------
+                    # track section ----------------------------------------------------------------
                     track_nodes = np.empty((0, 11))
                     num_tracks = event_data['nTrack'][event_ind]
                     for track_index in range(num_tracks):
@@ -292,13 +276,13 @@ class GraphDataGenerator:
                     senders = np.append(senders, track_senders, axis=0)
                     receivers = np.append(receivers, track_receivers, axis=0)
 
-                    # end WIP ----------------------------------------------------------------
+                    # end track section ----------------------------------------------------------------
 
                     graph = {'nodes': nodes.astype(np.float32), 'globals': global_node.astype(np.float32),
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-                        'edges': edges.astype(np.float32), 'cluster_E': cluster_calib_E.astype(np.float32),
+                        'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
                         'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
-                        'cluster_LC_E': cluster_LC_E.astype(np.float32)}
+                        'cluster_E': cluster_E.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32)}
                     target = np.reshape([global_node.astype(np.float32), 0], [1,2])
 
                     preprocessed_data.append((graph, target))
