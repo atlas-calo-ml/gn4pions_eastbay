@@ -128,9 +128,9 @@ if __name__ == "__main__":
     # Get batch of data
     def get_batch(data_iter):
         for graphs, targets in data_iter:
-            graphs, energies, etas, em_probs, cluster_calib_es, cluster_had_weights = convert_to_tuple(graphs)
             targets = tf.convert_to_tensor(targets)
-            yield graphs, targets, energies, etas, em_probs, cluster_calib_es, cluster_had_weights
+            graphs, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_pts, track_pts = convert_to_tuple(graphs)
+            yield graphs, targets, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_pts, track_pts
 
     # Define loss function        
     mae_loss = tf.keras.losses.MeanAbsoluteError()
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         return regress_loss, class_loss, combined_loss
 
     # Get a sample graph for tf.function decorator
-    samp_graph, samp_target, _, _, _, _, _ = next(get_batch(data_gen_train.generator()))
+    samp_graph, samp_target, _, _, _, _, _, _, _ = next(get_batch(data_gen_train.generator()))
     data_gen_train.kill_procs()
     graph_spec = utils_tf.specs_from_graphs_tuple(samp_graph, True, True, True)
 
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         # Train
         print('Training...')
         start = time.time()
-        for i, (graph_data_tr, targets_tr, _, _, _, _, _) in enumerate(get_batch(data_gen_train.generator())):
+        for i, (graph_data_tr, targets_tr, _, _, _, _, _, _, _) in enumerate(get_batch(data_gen_train.generator())):
             losses_tr_rg, losses_tr_cl, losses_tr = train_step(graph_data_tr, targets_tr)
 
             training_loss.append(losses_tr.numpy())
@@ -240,8 +240,11 @@ if __name__ == "__main__":
         all_em_probs = []
         all_cluster_calib_es = []
         all_cluster_had_weights = []
+        all_truth_particle_pts = []
+        all_track_pts = []
+        
         start = time.time()
-        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val, cluster_calib_es_val, cluster_had_weights_val) in enumerate(get_batch(data_gen_val.generator())):
+        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val, cluster_calib_es_val, cluster_had_weights_val, truth_particle_pts_val, track_pts_val) in enumerate(get_batch(data_gen_val.generator())):
             losses_val_rg, losses_val_cl, losses_val, regress_vals, class_vals = val_step(graph_data_val, targets_val)
 
             targets_val = targets_val.numpy()
@@ -267,6 +270,8 @@ if __name__ == "__main__":
             all_em_probs.append(em_probs_val)
             all_cluster_calib_es.append([10**energy for energy in cluster_calib_es_val])
             all_cluster_had_weights.append(cluster_had_weights_val)
+            all_truth_particle_pts.append(truth_particle_pts_val)
+            all_track_pts.append(track_pts_val)
 
             if not (i-1)%log_freq:
                 end = time.time()
@@ -286,7 +291,9 @@ if __name__ == "__main__":
         all_em_probs = np.concatenate(all_em_probs)
         all_cluster_calib_es = np.concatenate(all_cluster_calib_es)
         all_cluster_had_weights = np.concatenate(all_cluster_had_weights)
-
+        all_truth_particle_pts = np.concatenate(all_truth_particle_pts) 
+        all_track_pts = np.concatenate(all_track_pts) 
+        
         val_loss_epoch.append(val_loss)
         val_loss_regress_epoch.append(val_loss_regress)
         val_loss_class_epoch.append(val_loss_class)
@@ -321,7 +328,9 @@ if __name__ == "__main__":
                     etas=all_etas,
                     em_probs=all_em_probs,
                     cluster_calib_es=all_cluster_calib_es,
-                    cluster_had_weights=all_cluster_had_weights)
+                    cluster_had_weights=all_cluster_had_weights,
+                    truth_particle_pts=all_truth_particle_pts,
+                    track_pts=all_track_pts)
             checkpoint.save(checkpoint_prefix)
         else: 
             print(f'Loss didnt decrease from {curr_loss:.4f}')

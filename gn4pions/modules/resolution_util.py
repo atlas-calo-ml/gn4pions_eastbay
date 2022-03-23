@@ -13,7 +13,7 @@ from . import plot_util as pu
 
 
 def responsePlot(x, y, figfile='', statistic='median',
-                 xlabel='Truth Particle Energy', ylabel='Predicted Energy / Truth Particle Energy',
+                 xlabel='Truth Particle Energy [GeV]', ylabel='Predicted Energy / Truth Particle Energy',
                  atlas_x=-1, atlas_y=-1, simulation=False, make_plot=True,
                  textlist=[]):
     xbin = [10**exp for exp in np.arange(-1., 3.1, 0.05)]
