@@ -232,9 +232,11 @@ class GraphDataGenerator:
 
                     # end track section ----------------------------------------------------------------
 
+                    globals_list = [track_pt.astype(np.float32)]
+
                     graph = {'nodes': nodes.astype(np.float32),
 #                              'globals': global_node.astype(np.float32),
-                             'globals': track_pt.astype(np.float32),
+                             'globals': globals_list,
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
                         'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
                         'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
