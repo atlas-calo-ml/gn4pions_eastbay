@@ -71,15 +71,16 @@ if __name__ == "__main__":
     yaml.dump(config, open(save_dir + '/config.yaml', 'w'))
 
     # Read data and create data generators
-    pi0_files = np.sort(glob.glob(data_dir+'pi0_files/*.npy'))
+#     pi0_files = np.sort(glob.glob(data_dir+'pion_files/*.npy'))
+    pi0_files = []
     pion_files = np.sort(glob.glob(data_dir+'pion_files/*.npy'))
 
     train_start = 0
     train_end = train_start + num_train_files
     val_end = train_end + num_val_files
 
-    pi0_train_files = pi0_files[train_start:train_end]
-    pi0_val_files = pi0_files[train_end:val_end]
+    pi0_train_files = None
+    pi0_val_files = None
     pion_train_files = pion_files[train_start:train_end]
     pion_val_files = pion_files[train_end:val_end]
 
@@ -95,10 +96,10 @@ if __name__ == "__main__":
             train_files = np.sort(glob.glob(train_output_dir+'*.p'))[:num_train_files]
             val_files = np.sort(glob.glob(val_output_dir+'*.p'))[:num_val_files]
 
-            pi0_train_files = train_files
-            pi0_val_files = val_files
-            pion_train_files = None
-            pion_val_files = None
+            pi0_train_files = None
+            pi0_val_files = None
+            pion_train_files = train_files
+            pion_val_files = val_files
 
             train_output_dir = None
             val_output_dir = None
