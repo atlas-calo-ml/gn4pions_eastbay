@@ -25,4 +25,4 @@ training:
   gpu: 1
   learning_rate: 0.001
   log_freq: 100
-  save_dir: results/onetrack_multicluster_hadweight/ 
+  save_dir: results/onetrack_multicluster/ 
