@@ -21,7 +21,7 @@ model:
   reducer: mean
 training: 
   alpha: .75 
-  epochs: 10
+  epochs: 2
   gpu: 1
   learning_rate: 0.001
   log_freq: 100

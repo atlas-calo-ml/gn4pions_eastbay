@@ -220,8 +220,10 @@ class GraphDataGenerator:
                     num_tracks = event_data['nTrack'][event_ind]
                     for track_index in range(num_tracks):
                         np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
-                        track_pt = np.array([np.log10(event_data["trackPt"][event_ind][track_index])])
-
+                        track_pt = np.log10(event_data["trackPt"][event_ind][track_index])
+                        track_z0 = event_data["trackZ0"][event_ind][track_index]
+                        track_eta = event_data["trackEta"][event_ind][track_index]
+                        track_phi = event_data["trackPhi"][event_ind][track_index]
                     track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
 
                     # append on the track nodes and edges to the cluster ones
@@ -232,9 +234,17 @@ class GraphDataGenerator:
 
                     # end track section ----------------------------------------------------------------
 
+                    globals_list = np.array([
+#                                              cluster_E.astype(np.float32),
+                                             track_pt.astype(np.float32),
+#                                              track_z0.astype(np.float32),
+#                                              track_eta.astype(np.float32),
+#                                              track_phi.astype(np.float32),
+                                             ])
+
                     graph = {'nodes': nodes.astype(np.float32),
 #                              'globals': global_node.astype(np.float32),
-                             'globals': track_pt.astype(np.float32),
+                             'globals': globals_list,
                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
                         'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
                         'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
