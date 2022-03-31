@@ -16,13 +16,13 @@ model:
   global_block_opt: {use_edges: false, use_globals: true, use_nodes: true}
   latent_size: 64
   node_block_opt: {use_globals: true, use_nodes: true, use_received_edges: true, use_sent_edges: false}
-  num_blocks: 6
+  num_blocks: 4
   num_layers: 4
   reducer: mean
 training: 
-  alpha: 0.75
+  alpha: .75 
   epochs: 10
   gpu: 1
   learning_rate: 0.001
   log_freq: 100
-  save_dir: results/onetrack_multicluster/
+  save_dir: results/onetrack_multicluster/ 
