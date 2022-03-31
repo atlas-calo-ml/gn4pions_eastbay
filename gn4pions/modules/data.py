@@ -237,9 +237,9 @@ class GraphDataGenerator:
                     globals_list = np.array([
 #                                              cluster_E.astype(np.float32),
                                              track_pt.astype(np.float32),
-#                                              track_z0.astype(np.float32),
-#                                              track_eta.astype(np.float32),
-#                                              track_phi.astype(np.float32),
+                                             track_z0.astype(np.float32),
+                                             track_eta.astype(np.float32),
+                                             track_phi.astype(np.float32),
                                              ])
 
                     graph = {'nodes': nodes.astype(np.float32),
