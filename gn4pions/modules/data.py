@@ -39,10 +39,10 @@ class GraphDataGenerator:
         if self.preprocess and self.output_dir is not None:
             self.pi0_file_list = pi0_file_list
             self.pion_file_list = pion_file_list
-            assert len(pi0_file_list) == len(pion_file_list)
-            self.num_files = len(self.pi0_file_list)
+#             assert len(pi0_file_list) == len(pion_file_list)
+            self.num_files = len(self.pion_file_list)
         else:
-            self.file_list = pi0_file_list
+            self.file_list = pion_file_list
             self.num_files = len(self.file_list)
 
         self.cellGeo_file = cellGeo_file
