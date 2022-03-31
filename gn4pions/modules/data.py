@@ -254,60 +254,60 @@ class GraphDataGenerator:
 
                     preprocessed_data.append((graph, target))
 
-            ### Pi0
-            file = self.pi0_file_list[file_num]
-            event_data = np.load(file, allow_pickle=True).item()
-            num_events = len(event_data[[key for key in event_data.keys()][0]])
+#             ### Pi0
+#             file = self.pi0_file_list[file_num]
+#             event_data = np.load(file, allow_pickle=True).item()
+#             num_events = len(event_data[[key for key in event_data.keys()][0]])
 
-            for event_ind in range(num_events):
-                num_clusters = event_data['nCluster'][event_ind]
-                truth_particle_E = np.log10(event_data['truthPartE'][event_ind][0]) # first one is the pion!
-                truthPartPt = event_data['truthPartPt'][event_ind][0]
+#             for event_ind in range(num_events):
+#                 num_clusters = event_data['nCluster'][event_ind]
+#                 truth_particle_E = np.log10(event_data['truthPartE'][event_ind][0]) # first one is the pion!
+#                 truthPartPt = event_data['truthPartPt'][event_ind][0]
 
-                for i in range(num_clusters):
-                    cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
-                    cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][i]
-                    cluster_E = np.log10(event_data['cluster_E'][event_ind][i])
-                    cluster_HAD_WEIGHT = event_data['cluster_HAD_WEIGHT'][event_ind][i]
+#                 for i in range(num_clusters):
+#                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
+#                     cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][i]
+#                     cluster_E = np.log10(event_data['cluster_E'][event_ind][i])
+#                     cluster_HAD_WEIGHT = event_data['cluster_HAD_WEIGHT'][event_ind][i]
 
-                    if event_data['dR_pass'][event_ind][i] == False:
-                        continue
+#                     if event_data['dR_pass'][event_ind][i] == False:
+#                         continue
 
-                    if cluster_calib_E is None:
-                        continue
+#                     if cluster_calib_E is None:
+#                         continue
 
-                    cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
+#                     cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
 
-                    nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
-                    senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
+#                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
+#                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
 
-                    # track section ----------------------------------------------------------------
-                    track_nodes = np.empty((0, 11))
-                    num_tracks = event_data['nTrack'][event_ind]
-                    for track_index in range(num_tracks):
-                        np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
-                        track_pt = np.array([np.log10(event_data["trackPt"][event_ind][track_index])])
+#                     # track section ----------------------------------------------------------------
+#                     track_nodes = np.empty((0, 11))
+#                     num_tracks = event_data['nTrack'][event_ind]
+#                     for track_index in range(num_tracks):
+#                         np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
+#                         track_pt = np.array([np.log10(event_data["trackPt"][event_ind][track_index])])
 
-                    track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+#                     track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
 
-                    nodes = np.append(nodes, np.array(track_nodes), axis=0)
-                    edges = np.append(edges, track_edge_features, axis=0)
-                    senders = np.append(senders, track_senders, axis=0)
-                    receivers = np.append(receivers, track_receivers, axis=0)
+#                     nodes = np.append(nodes, np.array(track_nodes), axis=0)
+#                     edges = np.append(edges, track_edge_features, axis=0)
+#                     senders = np.append(senders, track_senders, axis=0)
+#                     receivers = np.append(receivers, track_receivers, axis=0)
 
-                    # end track section ----------------------------------------------------------------
+#                     # end track section ----------------------------------------------------------------
 
-                    graph = {'nodes': nodes.astype(np.float32),
-#                              'globals': global_node.astype(np.float32),
-                             'globals': track_pt.astype(np.float32),
-                        'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-                        'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
-                        'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
-                        'cluster_E': cluster_E.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32),
-                        'truthPartPt': truthPartPt.astype(np.float32), 'track_pt': track_pt.astype(np.float32)}
-                    target = np.reshape([truth_particle_E.astype(np.float32), 0], [1,2])
+#                     graph = {'nodes': nodes.astype(np.float32),
+# #                              'globals': global_node.astype(np.float32),
+#                              'globals': track_pt.astype(np.float32),
+#                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
+#                         'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
+#                         'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
+#                         'cluster_E': cluster_E.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32),
+#                         'truthPartPt': truthPartPt.astype(np.float32), 'track_pt': track_pt.astype(np.float32)}
+#                     target = np.reshape([truth_particle_E.astype(np.float32), 0], [1,2])
 
-                    preprocessed_data.append((graph, target))
+#                     preprocessed_data.append((graph, target))
 
             random.shuffle(preprocessed_data)
 
