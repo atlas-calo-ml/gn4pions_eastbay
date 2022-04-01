@@ -53,7 +53,7 @@ if __name__=="__main__":
     preprocess = data_config['preprocess']
     output_dir = '/p/vast1/karande1/heavyIon/data/preprocessed_data/infer/geo/'
 
-    already_preprocessed = data_config['already_preprocessed']
+    already_preprocessed = False  # data_config['already_preprocessed']
 
     concat_input = model_config['concat_input']
 

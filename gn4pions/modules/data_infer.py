@@ -41,7 +41,7 @@ class MPGraphDataGenerator:
         self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
         self.num_nodeFeatures = len(self.nodeFeatureNames)
         self.num_edgeFeatures = len(self.edgeFeatureNames)
-        self.meta_features = ['file_name', 'event_ind', 'cluster_ind', 'cluster_E', 'cluster_Pt',
+        self.meta_features = ['file_name', 'event_ind', 'cluster_ind', 'cluster_E', 'cluster_Pt', 'cluster_EM_PROBABILITY',
                               'cluster_Eta', 'cluster_Phi', 'cluster_nCells', 'cluster_ENG_CALIB_TOT', 'type']
 
         self.cellGeo_data = self.cellGeo_data.arrays(library='np')

@@ -6,7 +6,8 @@ from __future__ import division
 from __future__ import print_function
 
 
-__all__ = ['make_mlp_model', 'MLPGraphIndependent', 'MLPGraphNetwork', 'MLPDeepSets', 'MultiOutWeightedRegressModel']
+__all__ = ['make_mlp_model', 'MLPGraphIndependent', 'MLPGraphNetwork', 'MLPDeepSets', 'MultiOutWeightedRegressModel',
+           'MultiOutBlockModel']
 
 # Cell
 #nbdev_comment from __future__ import absolute_import
@@ -187,3 +188,65 @@ class MultiOutWeightedRegressModel(snt.Module):
         regress_output = self._regress_transform(stacked_independent)
         class_output = independent_output[1]
         return regress_output, class_output
+
+# Cell
+class MultiOutBlockModel(snt.Module):
+    """
+
+    """
+
+    def __init__(self,
+               node_output_size=None,
+               global_output_size=1,
+               num_outputs=1,
+               model_config=None,
+               name="MultiOutBlockModel"):
+        super(MultiOutBlockModel, self).__init__(name=name)
+
+        self._num_blocks = model_config['num_blocks']
+        self._concat_input = model_config['concat_input']
+        self._model_config = model_config
+        self._num_outputs = num_outputs
+
+        if self._model_config['block_type'] == 'graphnet':
+            block_type = MLPGraphNetwork
+        elif self._model_config['block_type'] == 'deepsets':
+            block_type = MLPDeepSets
+
+
+        self._core = [
+                block_type(name="core_"+str(i), **self._model_config) for i in range(self._num_blocks)
+                ]
+
+
+        # Transforms the outputs into the appropriate shapes.
+        edge_fn = None
+        node_fn = None
+        global_fn = []
+
+        for i in range(self._num_outputs):
+            global_fn.append(lambda: snt.Linear(global_output_size, name="global_output_"+str(i)))
+
+        self._output_transform = []
+        for i in range(self._num_outputs):
+            self._output_transform.append(modules.GraphIndependent(
+                edge_fn, node_fn, global_fn[i], name="network_output_"+str(i)))
+
+    def __call__(self, input_op):
+        latent = self._core[0](input_op)
+        latent_all = [input_op]
+        for i in range(1, self._num_blocks):
+            if self._concat_input:
+                core_input = utils_tf.concat([latent, latent_all[-1]], axis=1)
+            else:
+                core_input = latent
+
+            latent_all.append(latent)
+            latent = self._core[i](core_input)
+
+        latent_all.append(latent)
+        stacked_latent = utils_tf.concat(latent_all, axis=1)
+        output = []
+        for i in range(self._num_outputs):
+            output.append(self._output_transform[i](stacked_latent))
+        return output
