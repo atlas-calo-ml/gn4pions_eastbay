@@ -13,7 +13,7 @@ from . import plot_util as pu
 
 
 def responsePlot(x, y, figfile='', statistic='median',
-                 xlabel='Cluster Calib Hits', ylabel='Cluster Energy / Calib Hits',
+                 xlabel='Truth Particle Energy [GeV]', ylabel='Predicted Energy / Truth Particle Energy',
                  atlas_x=-1, atlas_y=-1, simulation=False, make_plot=True,
                  textlist=[]):
     xbin = [10**exp for exp in np.arange(-1., 3.1, 0.05)]
@@ -34,8 +34,8 @@ def responsePlot(x, y, figfile='', statistic='median',
         plt.xscale('log')
         plt.ylim(0, 1.75)
         plt.xlim(0.3, )
-        pu.ampl.set_xlabel(xlabel)
-        pu.ampl.set_ylabel(ylabel)
+        pu.ampl.set_xlabel(xlabel, fontsize=20)
+        pu.ampl.set_ylabel(ylabel, fontsize=20)
         # ampl.set_zlabel('Clusters')
         cb = plt.colorbar()
         cb.ax.set_ylabel('Clusters')
@@ -65,7 +65,7 @@ def iqrOverMed(x):
     return iqr / (2*med)
 
 def resolutionPlot(x, y, figfile='', statistic='std',
-                   xlabel='Cluster Calib Hits', ylabel='Energy IQR over 2xMedian',
+                   xlabel='Truth Particle Energy', ylabel='Energy IQR over 2xMedian',
                    atlas_x=-1, atlas_y=-1, simulation=False,
                    textlist=[]):
     xbin = [10**exp for exp in  np.arange(-1.0, 3.1, 0.1)]
@@ -83,9 +83,9 @@ def resolutionPlot(x, y, figfile='', statistic='std',
     plt.plot(xcenter, resolution)
     plt.xscale('log')
     plt.xlim(0.1, 1000)
-    plt.ylim(0,2)
-    pu.ampl.set_xlabel(xlabel)
-    pu.ampl.set_ylabel(ylabel)
+    plt.ylim(0,0.1)
+    pu.ampl.set_xlabel(xlabel, fontsize=20)
+    pu.ampl.set_ylabel(ylabel, fontsize=20)
 
     pu.drawLabels(fig, atlas_x, atlas_y, simulation, textlist)
 

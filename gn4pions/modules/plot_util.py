@@ -88,8 +88,8 @@ def lineOverlay(xcenter, lines, labels, xlabel, ylabel, figfile = '',
 
     plt.xlim(x_min, x_max)
     plt.ylim(y_min, y_max)
-    ampl.set_xlabel(xlabel)
-    ampl.set_ylabel(ylabel)
+    ampl.set_xlabel(xlabel, fontsize=20)
+    ampl.set_ylabel(ylabel, fontsize=20)
 
     drawLabels(fig, atlas_x, atlas_y, simulation, textlist)
 
