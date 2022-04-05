@@ -8,6 +8,7 @@ index = {"GraphDataGenerator": "00_data.ipynb",
          "MLPGraphNetwork": "01_models.ipynb",
          "MLPDeepSets": "01_models.ipynb",
          "MultiOutWeightedRegressModel": "01_models.ipynb",
+         "MultiOutBlockModel": "01_models.ipynb",
          "convert_to_tuple": "02_utils.ipynb"}
 
 modules = ["modules/data.py",

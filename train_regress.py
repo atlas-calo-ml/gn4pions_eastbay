@@ -21,7 +21,7 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from gn4pions.modules.data import GraphDataGenerator
-from gn4pions.modules.models import MultiOutWeightedRegressModel
+from gn4pions.modules.models import MultiOutWeightedRegressModel, MultiOutBlockModel
 from gn4pions.modules.utils import convert_to_tuple
 
 sns.set_context('poster')
@@ -129,20 +129,20 @@ if __name__ == "__main__":
     def get_batch(data_iter):
         for graphs, targets in data_iter:
             targets = tf.convert_to_tensor(targets)
-            graphs, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_pts, track_pts = convert_to_tuple(graphs)
-            yield graphs, targets, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_pts, track_pts
+            graphs, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_pts, track_pts, track_etas = convert_to_tuple(graphs)
+            yield graphs, targets, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_pts, track_pts, track_etas
 
     # Define loss function        
     mae_loss = tf.keras.losses.MeanAbsoluteError()
     bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-    def loss_fn(targets, regress_preds, class_preds):
+    def loss_fn(targets, regress_preds):
         regress_loss = mae_loss(targets[:,:1], regress_preds)
-        class_loss = bce_loss(targets[:,1:], class_preds)
-        combined_loss = alpha*regress_loss + (1 - alpha)*class_loss 
-        return regress_loss, class_loss, combined_loss
+#         class_loss = bce_loss(targets[:,1:], class_preds)
+#         combined_loss = alpha*regress_loss + (1 - alpha)*class_loss 
+        return regress_loss#, combined_loss
 
     # Get a sample graph for tf.function decorator
-    samp_graph, samp_target, _, _, _, _, _, _, _ = next(get_batch(data_gen_train.generator()))
+    samp_graph, samp_target, _, _, _, _, _, _, _, _ = next(get_batch(data_gen_train.generator()))
     data_gen_train.kill_procs()
     graph_spec = utils_tf.specs_from_graphs_tuple(samp_graph, True, True, True)
 
@@ -150,26 +150,26 @@ if __name__ == "__main__":
     @tf.function(input_signature=[graph_spec, tf.TensorSpec(shape=[None,2], dtype=tf.float32)])
     def train_step(graphs, targets):
         with tf.GradientTape() as tape:
-            regress_output, class_output = model(graphs)
+            regress_output = model(graphs)[0]
             regress_preds = regress_output.globals
-            class_preds = class_output.globals
-            regress_loss, class_loss, loss = loss_fn(targets, regress_preds, class_preds)
+#             class_preds = class_output.globals
+            regress_loss = loss_fn(targets, regress_preds)
 
         gradients = tape.gradient(regress_loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-        return regress_loss, class_loss, loss
+        return regress_loss
 
     # Validation Step
     @tf.function(input_signature=[graph_spec, tf.TensorSpec(shape=[None,2], dtype=tf.float32)])
     def val_step(graphs, targets):
-        regress_output, class_output = model(graphs)
+        regress_output = model(graphs)[0]
         regress_preds = regress_output.globals
-        class_preds = class_output.globals
-        regress_loss, class_loss, loss = loss_fn(targets, regress_preds, class_preds)
-        return regress_loss, class_loss, loss, regress_preds, class_preds
+#         class_preds = class_output.globals
+        regress_loss = loss_fn(targets, regress_preds)
+        return regress_loss, regress_preds
 
     # Model 
-    model = MultiOutWeightedRegressModel(global_output_size=1, num_outputs=2, model_config=model_config)
+    model = MultiOutBlockModel(global_output_size=1, num_outputs=1, model_config=model_config)
 
     # Optimizer
     optimizer = tf.keras.optimizers.Adam(learning_rate)
@@ -210,25 +210,25 @@ if __name__ == "__main__":
         # Train
         print('Training...')
         start = time.time()
-        for i, (graph_data_tr, targets_tr, _, _, _, _, _, _, _) in enumerate(get_batch(data_gen_train.generator())):
-            losses_tr_rg, losses_tr_cl, losses_tr = train_step(graph_data_tr, targets_tr)
+        for i, (graph_data_tr, targets_tr, _, _, _, _, _, _, _, _) in enumerate(get_batch(data_gen_train.generator())):
+            losses_tr = train_step(graph_data_tr, targets_tr)
 
             training_loss.append(losses_tr.numpy())
-            training_loss_regress.append(losses_tr_rg.numpy())
-            training_loss_class.append(losses_tr_cl.numpy())
+#             training_loss_regress.append(losses_tr_rg.numpy())
+#             training_loss_class.append(losses_tr_cl.numpy())
 
             if not (i-1)%log_freq:
                 end = time.time()
                 print(f'Iter: {i:04d}, ', end='')
                 print(f'Tr_loss_mean: {np.mean(training_loss):.4f}, ', end='')
-                print(f'Tr_loss_rg_mean: {np.mean(training_loss_regress):.4f}, ', end='') 
-                print(f'Tr_loss_cl_mean: {np.mean(training_loss_class):.4f}, ', end='') 
+#                 print(f'Tr_loss_rg_mean: {np.mean(training_loss_regress):.4f}, ', end='') 
+#                 print(f'Tr_loss_cl_mean: {np.mean(training_loss_class):.4f}, ', end='') 
                 print(f'Took {end-start:.4f}secs')
                 start = time.time()
 
         training_loss_epoch.append(training_loss)
-        training_loss_regress_epoch.append(training_loss_regress)
-        training_loss_class_epoch.append(training_loss_class)
+#         training_loss_regress_epoch.append(training_loss_regress)
+#         training_loss_class_epoch.append(training_loss_class)
         training_end = time.time()
 
         # validate
@@ -242,43 +242,43 @@ if __name__ == "__main__":
         all_cluster_had_weights = []
         all_truth_particle_pts = []
         all_track_pts = []
+        all_track_etas = []
         
         start = time.time()
-        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val, cluster_calib_es_val, cluster_had_weights_val, truth_particle_pts_val, track_pts_val) in enumerate(get_batch(data_gen_val.generator())):
-            losses_val_rg, losses_val_cl, losses_val, regress_vals, class_vals = val_step(graph_data_val, targets_val)
+        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val, cluster_calib_es_val, cluster_had_weights_val, truth_particle_pts_val, track_pts_val, track_etas_val) in enumerate(get_batch(data_gen_val.generator())):
+            losses_val, regress_vals = val_step(graph_data_val, targets_val)
 
             targets_val = targets_val.numpy()
             regress_vals = regress_vals.numpy()
-            class_vals = class_vals.numpy()
+#             class_vals = class_vals.numpy()
 
             ### These variables are stored as log_10, so need to exponentiate them again here 
             targets_val[:,0] = 10**targets_val[:,0]
             regress_vals = 10**regress_vals
-            class_vals =  tf.math.sigmoid(class_vals)
+#             class_vals =  tf.math.sigmoid(class_vals)
             energy = 10**graph_data_val.globals 
 
-            output_vals = np.hstack([regress_vals, class_vals])
-
             val_loss.append(losses_val.numpy())
-            val_loss_regress.append(losses_val_rg.numpy())
-            val_loss_class.append(losses_val_cl.numpy())
+#             val_loss_regress.append(losses_val_rg.numpy())
+#             val_loss_class.append(losses_val_cl.numpy())
 
             all_targets.append(targets_val)
-            all_outputs.append(output_vals)
+            all_outputs.append(regress_vals)
             all_energies.append([10**energy for energy in energies_val])
             all_etas.append(etas_val)
             all_em_probs.append(em_probs_val)
             all_cluster_calib_es.append([10**energy for energy in cluster_calib_es_val])
             all_cluster_had_weights.append(cluster_had_weights_val)
             all_truth_particle_pts.append(truth_particle_pts_val)
-            all_track_pts.append(track_pts_val)
+            all_track_pts.append([10**pt for pt in track_pts_val])
+            all_track_etas.append(track_etas_val)
 
             if not (i-1)%log_freq:
                 end = time.time()
                 print(f'Iter: {i:04d}, ', end='')
                 print(f'Val_loss_mean: {np.mean(val_loss):.4f}, ', end='')
-                print(f'Val_loss_rg_mean: {np.mean(val_loss_regress):.4f}, ', end='') 
-                print(f'Val_loss_cl_mean: {np.mean(val_loss_class):.4f}, ', end='') 
+#                 print(f'Val_loss_rg_mean: {np.mean(val_loss_regress):.4f}, ', end='') 
+#                 print(f'Val_loss_cl_mean: {np.mean(val_loss_class):.4f}, ', end='') 
                 print(f'Took {end-start:.4f}secs')
                 start = time.time()
 
@@ -293,10 +293,11 @@ if __name__ == "__main__":
         all_cluster_had_weights = np.concatenate(all_cluster_had_weights)
         all_truth_particle_pts = np.concatenate(all_truth_particle_pts) 
         all_track_pts = np.concatenate(all_track_pts) 
-        
+        all_track_etas = np.concatenate(all_track_etas) 
+
         val_loss_epoch.append(val_loss)
-        val_loss_regress_epoch.append(val_loss_regress)
-        val_loss_class_epoch.append(val_loss_class)
+#         val_loss_regress_epoch.append(val_loss_regress)
+#         val_loss_class_epoch.append(val_loss_class)
 
         # Book keeping
         val_mins = int((epoch_end - training_end)/60)
@@ -311,16 +312,16 @@ if __name__ == "__main__":
         # Save losses
         np.savez(save_dir+'/losses', 
                 training=training_loss_epoch, validation=val_loss_epoch,
-                training_regress=training_loss_regress_epoch, validation_regress=val_loss_regress_epoch,
-                training_class=training_loss_class_epoch, validation_class=val_loss_class_epoch,
+#                 training_regress=training_loss_regress_epoch, validation_regress=val_loss_regress_epoch,
+#                 training_class=training_loss_class_epoch, validation_class=val_loss_class_epoch,
                 )
 
 
         # Checkpoint if validation loss improved
-        if np.mean(val_loss_regress)<curr_loss:
-            print(f'Loss decreased from {curr_loss:.4f} to {np.mean(val_loss_regress):.4f}')
+        if np.mean(val_loss)<curr_loss:
+            print(f'Loss decreased from {curr_loss:.4f} to {np.mean(val_loss):.4f}')
             print(f'Checkpointing and saving predictions to:\n{save_dir}')
-            curr_loss = np.mean(val_loss_regress)
+            curr_loss = np.mean(val_loss)
             np.savez(save_dir+'/predictions', 
                     targets=all_targets, 
                     outputs=all_outputs,
@@ -330,7 +331,8 @@ if __name__ == "__main__":
                     cluster_calib_es=all_cluster_calib_es,
                     cluster_had_weights=all_cluster_had_weights,
                     truth_particle_pts=all_truth_particle_pts,
-                    track_pts=all_track_pts)
+                    track_pts=all_track_pts,
+                    track_etas=all_track_etas)
             checkpoint.save(checkpoint_prefix)
         else: 
             print(f'Loss didnt decrease from {curr_loss:.4f}')

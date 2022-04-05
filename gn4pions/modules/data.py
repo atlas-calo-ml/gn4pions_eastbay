@@ -101,60 +101,60 @@ class GraphDataGenerator:
         nodes = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
         cluster_num_nodes = len(nodes)
 
-        # add dummy placeholder nodes for track features (not used in cluster cell nodes)
-        nodes = np.hstack((nodes, np.zeros((cluster_num_nodes, 4))))
+#         # add dummy placeholder nodes for track features (not used in cluster cell nodes)
+#         nodes = np.hstack((nodes, np.zeros((cluster_num_nodes, 4))))
 
         return nodes, np.array([global_node]), cluster_num_nodes, cell_IDmap
 
-    # track section ----------------------------------------------------------------
+#     # track section ----------------------------------------------------------------
 
-    def get_track_node(self, event_data, event_index, track_index):
-        """
-        Creates node features for tracks
-        Inputs:
+#     def get_track_node(self, event_data, event_index, track_index):
+#         """
+#         Creates node features for tracks
+#         Inputs:
 
-        Returns:
-            1 Dimensional array of node features for a single node
-                NOTE the cluster get_node function is a 2D array of multiple nodes
-                This function is used in a for loop so the end result is a 2D array
-        """
-        node_features = np.array(event_data["trackPt"][event_index][track_index])
-        node_features = np.append(node_features, event_data["trackZ0"][event_index][track_index])
-        node_features = np.append(node_features, event_data["trackEta_EMB2"][event_index][track_index])
-        node_features = np.append(node_features, event_data["trackPhi_EMB2"][event_index][track_index])
-        node_features = np.reshape(node_features, (len(node_features))).T
+#         Returns:
+#             1 Dimensional array of node features for a single node
+#                 NOTE the cluster get_node function is a 2D array of multiple nodes
+#                 This function is used in a for loop so the end result is a 2D array
+#         """
+#         node_features = np.array(event_data["trackPt"][event_index][track_index])
+#         node_features = np.append(node_features, event_data["trackZ0"][event_index][track_index])
+#         node_features = np.append(node_features, event_data["trackEta_EMB2"][event_index][track_index])
+#         node_features = np.append(node_features, event_data["trackPhi_EMB2"][event_index][track_index])
+#         node_features = np.reshape(node_features, (len(node_features))).T
 
-        # add dummy placeholder nodes for track features (not used in track cell nodes)
-        node_features = np.hstack((np.zeros(7), node_features))
+#         # add dummy placeholder nodes for track features (not used in track cell nodes)
+#         node_features = np.hstack((np.zeros(7), node_features))
 
-        return node_features
+#         return node_features
 
-    def get_track_edges(self, num_track_nodes, start_index):
-        """
-        Creates the edge senders and recievers and edge features
-        Inputs:
-        (int) num_track_nodes: number of track nodes
-        (int) start_index: the index of senders/recievers to start with. We should start with num_cluster_edges+1 to avoid overlap
+#     def get_track_edges(self, num_track_nodes, start_index):
+#         """
+#         Creates the edge senders and recievers and edge features
+#         Inputs:
+#         (int) num_track_nodes: number of track nodes
+#         (int) start_index: the index of senders/recievers to start with. We should start with num_cluster_edges+1 to avoid overlap
 
-        Returns:
-        (np.array) edge_features:
-        (np.array) senders:
-        (np.array) recievers:
-        """
-        # Full Connected tracks
-        # since we are fully connected, the order of senders and recievers doesn't matter
-        # we just need to count each node - edges will have a placeholder feature
-        connections = list(itertools.permutations(range(start_index, start_index + num_track_nodes),2))
-        for i in range(5):
-            connections.append((i, i))
+#         Returns:
+#         (np.array) edge_features:
+#         (np.array) senders:
+#         (np.array) recievers:
+#         """
+#         # Full Connected tracks
+#         # since we are fully connected, the order of senders and recievers doesn't matter
+#         # we just need to count each node - edges will have a placeholder feature
+#         connections = list(itertools.permutations(range(start_index, start_index + num_track_nodes),2))
+#         for i in range(5):
+#             connections.append((i, i))
 
-        senders = np.array([x[0] for x in connections])
-        recievers = np.array([x[0] for x in connections])
-        edge_features = np.zeros((len(connections), 10))
+#         senders = np.array([x[0] for x in connections])
+#         recievers = np.array([x[0] for x in connections])
+#         edge_features = np.zeros((len(connections), 10))
 
-        return senders, recievers, edge_features
+#         return senders, recievers, edge_features
 
-    # end track section ----------------------------------------------------------------
+#     # end track section ----------------------------------------------------------------
 
     def get_edges(self, cluster_num_nodes, cell_IDmap):
         """
@@ -215,24 +215,24 @@ class GraphDataGenerator:
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
 
-                # track section ----------------------------------------------------------------
-                    track_nodes = np.empty((0, 11))
+#                 # track section ----------------------------------------------------------------
+#                     track_nodes = np.empty((0, 11))
                     num_tracks = event_data['nTrack'][event_ind]
                     for track_index in range(num_tracks):
-                        np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
+#                         np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
                         track_pt = np.log10(event_data["trackPt"][event_ind][track_index])
                         track_z0 = event_data["trackZ0"][event_ind][track_index]
                         track_eta = event_data["trackEta"][event_ind][track_index]
                         track_phi = event_data["trackPhi"][event_ind][track_index]
-                    track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+#                     track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
 
-                    # append on the track nodes and edges to the cluster ones
-                    nodes = np.append(nodes, np.array(track_nodes), axis=0)
-                    edges = np.append(edges, track_edge_features, axis=0)
-                    senders = np.append(senders, track_senders, axis=0)
-                    receivers = np.append(receivers, track_receivers, axis=0)
+#                     # append on the track nodes and edges to the cluster ones
+#                     nodes = np.append(nodes, np.array(track_nodes), axis=0)
+#                     edges = np.append(edges, track_edge_features, axis=0)
+#                     senders = np.append(senders, track_senders, axis=0)
+#                     receivers = np.append(receivers, track_receivers, axis=0)
 
-                    # end track section ----------------------------------------------------------------
+#                     # end track section ----------------------------------------------------------------
 
                     globals_list = np.array([
                                              cluster_E.astype(np.float32),
@@ -249,7 +249,8 @@ class GraphDataGenerator:
                         'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
                         'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
                         'cluster_E': cluster_E.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32),
-                        'truthPartPt': truthPartPt.astype(np.float32), 'track_pt': track_pt.astype(np.float32)}
+                        'truthPartPt': truthPartPt.astype(np.float32), 'track_pt': track_pt.astype(np.float32),
+                             'track_eta': track_eta.astype(np.float32)}
                     target = np.reshape([truth_particle_E.astype(np.float32), 1], [1,2])
 
                     preprocessed_data.append((graph, target))
