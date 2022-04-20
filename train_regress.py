@@ -256,7 +256,7 @@ if __name__ == "__main__":
             targets_val[:,0] = 10**targets_val[:,0]
             regress_vals = 10**regress_vals
 #             class_vals =  tf.math.sigmoid(class_vals)
-            energy = 10**graph_data_val.globals 
+#             energy = 10**graph_data_val.globals 
 
             val_loss.append(losses_val.numpy())
 #             val_loss_regress.append(losses_val_rg.numpy())
@@ -264,13 +264,13 @@ if __name__ == "__main__":
 
             all_targets.append(targets_val)
             all_outputs.append(regress_vals)
-            all_energies.append([10**energy for energy in energies_val])
+            all_energies.append([energy for energy in energies_val])
             all_etas.append(etas_val)
             all_em_probs.append(em_probs_val)
-            all_cluster_calib_es.append([10**energy for energy in cluster_calib_es_val])
+            all_cluster_calib_es.append([energy for energy in cluster_calib_es_val])
             all_cluster_had_weights.append(cluster_had_weights_val)
             all_truth_particle_pts.append(truth_particle_pts_val)
-            all_track_pts.append([10**pt for pt in track_pts_val])
+            all_track_pts.append([pt for pt in track_pts_val])
             all_track_etas.append(track_etas_val)
 
             if not (i-1)%log_freq:
