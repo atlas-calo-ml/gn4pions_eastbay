@@ -129,8 +129,8 @@ if __name__ == "__main__":
     def get_batch(data_iter):
         for graphs, targets in data_iter:
             targets = tf.convert_to_tensor(targets)
-            graphs, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_pts, track_pts, track_etas = convert_to_tuple(graphs)
-            yield graphs, targets, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_pts, track_pts, track_etas
+            graphs, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas = convert_to_tuple(graphs)
+            yield graphs, targets, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas
 
     # Define loss function        
     mae_loss = tf.keras.losses.MeanAbsoluteError()
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         return regress_loss#, combined_loss
 
     # Get a sample graph for tf.function decorator
-    samp_graph, samp_target, _, _, _, _, _, _, _, _ = next(get_batch(data_gen_train.generator()))
+    samp_graph, samp_target, _, _, _, _, _, _, _, _, _ = next(get_batch(data_gen_train.generator()))
     data_gen_train.kill_procs()
     graph_spec = utils_tf.specs_from_graphs_tuple(samp_graph, True, True, True)
 
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         # Train
         print('Training...')
         start = time.time()
-        for i, (graph_data_tr, targets_tr, _, _, _, _, _, _, _, _) in enumerate(get_batch(data_gen_train.generator())):
+        for i, (graph_data_tr, targets_tr, _, _, _, _, _, _, _, _, _) in enumerate(get_batch(data_gen_train.generator())):
             losses_tr = train_step(graph_data_tr, targets_tr)
 
             training_loss.append(losses_tr.numpy())
@@ -240,12 +240,13 @@ if __name__ == "__main__":
         all_em_probs = []
         all_cluster_calib_es = []
         all_cluster_had_weights = []
+        all_truth_particle_es = []
         all_truth_particle_pts = []
         all_track_pts = []
         all_track_etas = []
         
         start = time.time()
-        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val, cluster_calib_es_val, cluster_had_weights_val, truth_particle_pts_val, track_pts_val, track_etas_val) in enumerate(get_batch(data_gen_val.generator())):
+        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val, cluster_calib_es_val, cluster_had_weights_val, truth_particle_es_val, truth_particle_pts_val, track_pts_val, track_etas_val) in enumerate(get_batch(data_gen_val.generator())):
             losses_val, regress_vals = val_step(graph_data_val, targets_val)
 
             targets_val = targets_val.numpy()
@@ -264,11 +265,12 @@ if __name__ == "__main__":
 
             all_targets.append(targets_val)
             all_outputs.append(regress_vals)
-            all_energies.append([energy for energy in energies_val])
+            all_energies.append([10**energy for energy in energies_val])
             all_etas.append(etas_val)
             all_em_probs.append(em_probs_val)
-            all_cluster_calib_es.append([energy for energy in cluster_calib_es_val])
+            all_cluster_calib_es.append([10**energy for energy in cluster_calib_es_val])
             all_cluster_had_weights.append(cluster_had_weights_val)
+            all_truth_particle_es.append(truth_particle_es_val)
             all_truth_particle_pts.append(truth_particle_pts_val)
             all_track_pts.append([pt for pt in track_pts_val])
             all_track_etas.append(track_etas_val)
@@ -291,6 +293,7 @@ if __name__ == "__main__":
         all_em_probs = np.concatenate(all_em_probs)
         all_cluster_calib_es = np.concatenate(all_cluster_calib_es)
         all_cluster_had_weights = np.concatenate(all_cluster_had_weights)
+        all_truth_particle_es = np.concatenate(all_truth_particle_es) 
         all_truth_particle_pts = np.concatenate(all_truth_particle_pts) 
         all_track_pts = np.concatenate(all_track_pts) 
         all_track_etas = np.concatenate(all_track_etas) 
@@ -330,6 +333,7 @@ if __name__ == "__main__":
                     em_probs=all_em_probs,
                     cluster_calib_es=all_cluster_calib_es,
                     cluster_had_weights=all_cluster_had_weights,
+                    truth_particle_es=all_truth_particle_es,
                     truth_particle_pts=all_truth_particle_pts,
                     track_pts=all_track_pts,
                     track_etas=all_track_etas)

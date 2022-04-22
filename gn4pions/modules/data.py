@@ -26,24 +26,56 @@ import pandas as pd
 # Cell
 
 scales = {
-    'truthPartE_mean': 215.88905,
-    'truthPartE_std':  411.5805,
-    'cluster_cell_e_mean': 1.5849265,
-    'cluster_cell_e_std': 15.110136,
-    'cluster_e_mean': 92.877556,
-    'cluster_e_std': 228.13757,
-    'track_pt_mean': 235.44725,
-    'track_pt_std': 1182.93997489,
-    'track_z0_mean': 0.08022017,
-    'track_z0_std': 42.53320004,
-    'track_eta_mean': -0.00563187,
-    'track_eta_std': 1.35242735,
-    'track_phi_mean': 0.00206431,
-    'track_phi_std': 1.81240248,
-         }
+     'track_pt_mean': 1.633278727,
+     'track_pt_std': 0.8481947183,
+     'track_z0_mean': 0.08022017,
+     'track_z0_std': 42.53320004,
+     'track_eta_mean': -0.00563187,
+     'track_eta_std': 1.35242735,
+     'track_phi_mean': 0.00206431,
+     'track_phi_std': 1.81240248,
+     'truth_part_e_mean': 1.92469358,
+     'truth_part_e_std': 0.8289864,
+     'cluster_cell_e_mean': -1.0121697,
+     'cluster_cell_e_std': 0.818357,
+     'cluster_e_mean': 0.89923394,
+     'cluster_e_std': 1.0585934,
+     'cluster_eta_mean': 0.016195267,
+     'cluster_eta_std': 1.3400925,
+     'cluster_phi_mean': 0.0050816955,
+     'cluster_phi_std': 1.8100655,
+     'cell_geo_sampling_mean': 3.8827391420197177,
+     'cell_geo_sampling_std': 3.9588233603576204,
+     'cell_geo_eta_mean': 0.0005979097,
+     'cell_geo_eta_std': 1.4709069,
+     'cell_geo_phi_mean': -2.8938382e-05,
+     'cell_geo_phi_std': 1.813651,
+     'cell_geo_rPerp_mean': 1478.9285,
+     'cell_geo_rPerp_std': 434.60815,
+     'cell_geo_deta_mean': 0.026611786,
+     'cell_geo_deta_std': 0.03396141,
+     'cell_geo_dphi_mean': 0.068693615,
+     'cell_geo_dphi_std': 0.038586758}
 
-node_means = [1.5849265, 3.8827391420197177, 0.0005979097, -2.8938382e-05, 1478.9285, 0.026611786, 0.068693615]
-node_stds =  [15.110136, 3.9588233603576204, 1.4709069, 1.813651, 434.60815, 0.03396141, 0.038586758]
+node_means = [
+    scales["cluster_cell_e_mean"],
+    scales["cell_geo_sampling_mean"],
+    scales["cell_geo_eta_mean"],
+    scales["cell_geo_phi_mean"],
+    scales["cell_geo_rPerp_mean"],
+    scales["cell_geo_deta_mean"],
+    scales["cell_geo_dphi_mean"],
+]
+
+node_stds = [
+    scales["cluster_cell_e_std"],
+    scales["cell_geo_sampling_std"],
+    scales["cell_geo_eta_std"],
+    scales["cell_geo_phi_std"],
+    scales["cell_geo_rPerp_std"],
+    scales["cell_geo_deta_std"],
+    scales["cell_geo_dphi_std"],
+]
 
 # Cell
 
@@ -106,7 +138,7 @@ class GraphDataGenerator:
         if cluster_calib_E <= 0:
             return None
 
-        return cluster_calib_E
+        return np.log10(cluster_calib_E)
 
     def get_cluster_eta(self, event_data, event_ind, cluster_ind):
         """ Reading cluster eta """
@@ -119,8 +151,8 @@ class GraphDataGenerator:
         cell_IDs = event_data['cluster_cell_ID'][event_ind][cluster_ind]
         cell_IDmap = self.sorter[np.searchsorted(self.cellGeo_ID, cell_IDs, sorter=self.sorter)]
 
-        nodes = event_data['cluster_cell_E'][event_ind][cluster_ind]
-        global_node = event_data['cluster_E'][event_ind][cluster_ind]
+        nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
+        global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])
 #         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap])
 #         for f in self.nodeFeatureNames[2:4]:
 #             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
@@ -129,7 +161,7 @@ class GraphDataGenerator:
 #             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
 
         nodes = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
-        nodes_scaled = np.log10(np.abs(np.concatenate(nodes) - scales['cluster_cell_e_mean'])/scales['cluster_cell_e_std'])
+        nodes_scaled = (np.concatenate(nodes) - scales['cluster_cell_e_mean'])/scales['cluster_cell_e_std']
         nodes_scaled = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
 
 #         nodes_scaled = (nodes - node_means)/node_stds
@@ -230,8 +262,8 @@ class GraphDataGenerator:
 
             for event_ind in range(num_events):
                 num_clusters = event_data['nCluster'][event_ind]
-                truth_particle_E = event_data['truthPartE'][event_ind][0] # first one is the pion!
-                truth_particle_E_scaled = np.log10(np.abs(truth_particle_E - scales['truthPartE_mean'])/scales['truthPartE_std'])
+                truth_particle_E = np.log10(event_data['truthPartE'][event_ind][0])
+                truth_particle_E_scaled = (truth_particle_E - scales['truth_part_e_mean'])/scales['truth_part_e_std']
                 truthPartPt = event_data['truthPartPt'][event_ind][0]
 
                 for i in range(num_clusters):
@@ -239,8 +271,8 @@ class GraphDataGenerator:
                         continue
                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
                     cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][i]
-                    cluster_E = event_data['cluster_E'][event_ind][i]
-                    cluster_E_scaled = np.log10(np.abs(cluster_E - scales['cluster_e_mean'])/scales['cluster_e_std'])
+                    cluster_E = np.log10(event_data['cluster_E'][event_ind][i])
+                    cluster_E_scaled = (cluster_E - scales['cluster_e_mean'])/scales['cluster_e_std']
                     cluster_HAD_WEIGHT = event_data['cluster_HAD_WEIGHT'][event_ind][i]
 
                     if cluster_calib_E is None:
@@ -256,12 +288,12 @@ class GraphDataGenerator:
                     num_tracks = event_data['nTrack'][event_ind]
                     for track_index in range(num_tracks):
 #                         np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
-                        track_pt = event_data["trackPt"][event_ind][track_index]
+                        track_pt = np.log10(event_data["trackPt"][event_ind][track_index])
                         track_z0 = event_data["trackZ0"][event_ind][track_index]
                         track_eta = event_data["trackEta"][event_ind][track_index]
                         track_phi = event_data["trackPhi"][event_ind][track_index]
 
-                    track_pt_scaled = np.log10(np.abs(track_pt - scales['track_pt_mean'])/scales['track_pt_std'])
+                    track_pt_scaled = (track_pt - scales['track_pt_mean'])/scales['track_pt_std']
                     track_z0_scaled = (track_z0 - scales['track_z0_mean'])/scales['track_z0_std']
                     track_eta_scaled = (track_eta - scales['track_eta_mean'])/scales['track_eta_std']
                     track_phi_scaled = (track_phi - scales['track_phi_mean'])/scales['track_phi_std']
@@ -285,12 +317,13 @@ class GraphDataGenerator:
 
                     graph = {'nodes': nodes.astype(np.float32),
 #                              'globals': global_node.astype(np.float32),
-                             'globals': globals_list,
-                        'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-                        'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
-                        'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
-                        'cluster_E': cluster_E_scaled.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32),
-                        'truthPartPt': truthPartPt.astype(np.float32), 'track_pt': track_pt.astype(np.float32),
+                            'globals': globals_list,
+                            'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
+                            'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
+                            'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
+                            'cluster_E': cluster_E.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32),
+                            'truthPartPt': truthPartPt.astype(np.float32), 'truthPartE': truth_particle_E.astype(np.float32),
+                             'track_pt': track_pt.astype(np.float32),
                              'track_eta': track_eta.astype(np.float32)}
                     target = np.reshape([truth_particle_E_scaled.astype(np.float32), 1], [1,2])
                     preprocessed_data.append((graph, target))
