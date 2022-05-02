@@ -13,6 +13,7 @@ import compress_pickle as pickle
 from scipy.stats import circmean
 import random
 import itertools
+import tensorflow as tf
 
 import matplotlib.pyplot as plt # optional
 plt.rcParams.update({
@@ -113,7 +114,8 @@ class GraphDataGenerator:
         self.geoFeatureNames = self.cellGeo_data.keys()[1:9]
         self.nodeFeatureNames = ['cluster_cell_E']
 #         self.nodeFeatureNames = ['cluster_cell_E', *self.geoFeatureNames[:-2]]
-        self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
+        self.edgeFeatureNames = []
+#         self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
         self.num_nodeFeatures = len(self.nodeFeatureNames)
         self.num_edgeFeatures = len(self.edgeFeatureNames)
         self.cellGeo_data = self.cellGeo_data.arrays(library='np')
@@ -151,8 +153,10 @@ class GraphDataGenerator:
         cell_IDs = event_data['cluster_cell_ID'][event_ind][cluster_ind]
         cell_IDmap = self.sorter[np.searchsorted(self.cellGeo_ID, cell_IDs, sorter=self.sorter)]
 
-        nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
         global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])
+
+        nodes = [0]
+#         nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
 #         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap])
 #         for f in self.nodeFeatureNames[2:4]:
 #             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
@@ -163,9 +167,9 @@ class GraphDataGenerator:
         nodes = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
         nodes_scaled = (np.concatenate(nodes) - scales['cluster_cell_e_mean'])/scales['cluster_cell_e_std']
         nodes_scaled = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
-
+#         nodes_scaled = np.zeros(2)
 #         nodes_scaled = (nodes - node_means)/node_stds
-        cluster_num_nodes = len(nodes)
+        cluster_num_nodes = len(nodes_scaled)
 
 #         # add dummy placeholder nodes for track features (not used in cluster cell nodes)
 #         nodes = np.hstack((nodes, np.zeros((cluster_num_nodes, 4))))
@@ -260,6 +264,7 @@ class GraphDataGenerator:
 
             preprocessed_data = []
 
+#             for event_ind in range(3):
             for event_ind in range(num_events):
                 num_clusters = event_data['nCluster'][event_ind]
                 truth_particle_E = np.log10(event_data['truthPartE'][event_ind][0])
@@ -308,18 +313,21 @@ class GraphDataGenerator:
 #                     # end track section ----------------------------------------------------------------
 
                     globals_list = np.array([
-                                             cluster_E_scaled.astype(np.float32),
-                                             track_pt_scaled.astype(np.float32),
-                                             track_z0_scaled.astype(np.float32),
-                                             track_eta_scaled.astype(np.float32),
-                                             track_phi_scaled.astype(np.float32),
+                                             cluster_E.astype(np.float32),
+                                             track_pt.astype(np.float32),
+                                             track_z0.astype(np.float32),
+                                             track_eta.astype(np.float32),
+                                             track_phi.astype(np.float32),
                                              ])
 
-                    graph = {'nodes': nodes.astype(np.float32),
+                    graph = {
+                            'nodes': nodes.astype(np.float32),
 #                              'globals': global_node.astype(np.float32),
                             'globals': globals_list,
-                            'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-                            'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
+                            'senders': senders.astype(np.int32),
+                            'receivers': receivers.astype(np.int32),
+                            'edges': edges.astype(np.float32),
+                            'cluster_calib_E': cluster_calib_E.astype(np.float32),
                             'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
                             'cluster_E': cluster_E.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32),
                             'truthPartPt': truthPartPt.astype(np.float32), 'truthPartE': truth_particle_E.astype(np.float32),
