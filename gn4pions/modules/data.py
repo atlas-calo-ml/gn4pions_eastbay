@@ -313,11 +313,11 @@ class GraphDataGenerator:
 #                     # end track section ----------------------------------------------------------------
 
                     globals_list = np.array([
-                                             cluster_E.astype(np.float32),
-                                             track_pt.astype(np.float32),
-                                             track_z0.astype(np.float32),
-                                             track_eta.astype(np.float32),
-                                             track_phi.astype(np.float32),
+                                             cluster_E_scaled.astype(np.float32),
+                                             track_pt_scaled.astype(np.float32),
+                                             track_z0_scaled.astype(np.float32),
+                                             track_eta_scaled.astype(np.float32),
+                                             track_phi_scaled.astype(np.float32),
                                              ])
 
                     graph = {
