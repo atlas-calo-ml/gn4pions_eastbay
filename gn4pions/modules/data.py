@@ -258,14 +258,11 @@ class GraphDataGenerator:
             print(f"Processing file number {file_num}")
 
             ### Pions
-            if len(self.pion_file_list) == 0:
-                print("No pion files.")
-            elif len(self.pion_file_list) > 0:
-                file = self.pion_file_list[file_num]
-                event_data = np.load(file, allow_pickle=True).item()
-                num_events = len(event_data[[key for key in event_data.keys()][0]])
+            file = self.pion_file_list[file_num]
+            event_data = np.load(file, allow_pickle=True).item()
+            num_events = len(event_data[[key for key in event_data.keys()][0]])
 
-                preprocessed_data = []
+            preprocessed_data = []
 
 #             for event_ind in range(3):
             for event_ind in range(num_events):
@@ -283,13 +280,13 @@ class GraphDataGenerator:
                     cluster_E_scaled = (cluster_E - scales['cluster_e_mean'])/scales['cluster_e_std']
                     cluster_HAD_WEIGHT = event_data['cluster_HAD_WEIGHT'][event_ind][i]
 
-                        if cluster_calib_E is None:
-                            continue
+                    if cluster_calib_E is None:
+                        continue
 
-                        cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
+                    cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
 
-                        nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
-                        senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
+                    nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
+                    senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
 
 #                 # track section ----------------------------------------------------------------
 #                     track_nodes = np.empty((0, 11))
