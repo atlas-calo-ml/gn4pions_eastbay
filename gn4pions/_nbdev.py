@@ -2,7 +2,10 @@
 
 __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
-index = {"GraphDataGenerator": "00_data.ipynb",
+index = {"scales": "00_data.ipynb",
+         "node_means": "00_data.ipynb",
+         "node_stds": "00_data.ipynb",
+         "GraphDataGenerator": "00_data.ipynb",
          "make_mlp_model": "01_models.ipynb",
          "MLPGraphIndependent": "01_models.ipynb",
          "MLPGraphNetwork": "01_models.ipynb",
