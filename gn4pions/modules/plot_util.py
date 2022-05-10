@@ -85,11 +85,16 @@ def lineOverlay(xcenter, lines, labels, xlabel, ylabel, figfile = '',
         plt.xscale('log')
     if y_log:
         plt.yscale('log')
+        
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
 
     plt.xlim(x_min, x_max)
     plt.ylim(y_min, y_max)
-    ampl.set_xlabel(xlabel, fontsize=20)
-    ampl.set_ylabel(ylabel, fontsize=20)
+    ampl.set_xlabel(xlabel, fontsize=20, labelpad=10)
+    ampl.set_ylabel(ylabel, fontsize=20, labelpad=10)
+#     plt.xlabel(xlabel, fontsize=20, labelpad=10)
+#     plt.ylabel(ylabel, fontsize=20, labelpad=10)
 
     drawLabels(fig, atlas_x, atlas_y, simulation, textlist)
 
@@ -182,7 +187,7 @@ def make_plot(items, figfile = '',
 def drawLabels(fig, atlas_x=-1, atlas_y=-1, simulation=False,
                textlist=[]):
     if atlas_x >= 0 and atlas_y >= 0:
-        ampl.draw_atlas_label(atlas_x, atlas_y, simulation=simulation, fontsize=18)
+        ampl.draw_atlas_label(atlas_x, atlas_y, simulation=simulation, status='prelim', fontsize=18)
 
     for textdict in textlist:
         fig.axes[0].text(
