@@ -126,10 +126,9 @@ def make_plots(test, plot_em = False, plot_track = False, save_label=None):
     y = 10**pred/10**target
     
     y_em = test.cluster_e_0/x
-    y_track = test.track_pt*np.cosh(test.track_eta)/x#(test.truth_particle_pt*np.cosh(test.track_eta))
-    
-#     plt.hist(y, bins=np.linspace(0.9,1.1,40));
-    
+#     y_track = test.track_pt/x
+    y_track = test.track_pt*np.cosh(test.track_eta)/x
+        
     ### Response median plot 
     xbin = [10**exp for exp in np.arange(-1., 3.1, 0.05)]
     ybin = np.arange(0., 3.1, 0.05)
@@ -139,8 +138,13 @@ def make_plots(test, plot_em = False, plot_track = False, save_label=None):
     median_nn = stats.binned_statistic(x, y, bins=xbin, statistic='median').statistic
     median_track = stats.binned_statistic(x, y_track, bins=xbin, statistic='median').statistic
     
+    plt.figure(dpi=100)
     c_map = ListedColormap(sns.color_palette("Blues", n_colors=100).as_hex())
-    #     plt.hist2d(x, y, bins=[xbin, ybin], norm=LogNorm(),zorder = -1, cmap=c_map);
+    plt.hist2d(x, y, bins=[xbin, ybin], norm=LogNorm(),zorder = -1, cmap=c_map);
+    plt.ylim(0, 1.75)
+    plt.plot([0.1, 1000], [1, 1], linestyle='--', color='black')
+    plt.plot(xcenter, median_nn, color='indianred')
+    plt.xscale('log')
 
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12,5), dpi=100, tight_layout=True)
     fig.patch.set_facecolor('white')
@@ -172,6 +176,10 @@ def make_plots(test, plot_em = False, plot_track = False, save_label=None):
         iqr = q84 - q16
         med = np.median(x)
         return iqr / (2*med)
+    
+    xbin = [10**exp for exp in np.arange(-1., 3.1, 0.1)]
+    ybin = np.arange(0., 3.1, 0.1)
+    xcenter = [(xbin[i] + xbin[i+1]) / 2 for i in range(len(xbin)-1)]
 
     iqr_em = stats.binned_statistic(x, y_em, bins=xbin, statistic=iqrOverMed).statistic
     iqr_nn = stats.binned_statistic(x, y, bins=xbin, statistic=iqrOverMed).statistic
