@@ -7,7 +7,7 @@ from __future__ import print_function
 
 
 __all__ = ['make_mlp_model', 'MLPGraphIndependent', 'MLPGraphNetwork', 'MLPDeepSets', 'MultiOutWeightedRegressModel',
-           'MultiOutBlockModel']
+           'MultiOutBlockModel', 'SimpleGraphModel']
 
 # Cell
 #nbdev_comment from __future__ import absolute_import
@@ -250,3 +250,36 @@ class MultiOutBlockModel(snt.Module):
         for i in range(self._num_outputs):
             output.append(self._output_transform[i](stacked_latent))
         return output
+
+# Cell
+class SimpleGraphModel(snt.Module):
+    """
+
+    """
+
+    def __init__(self,
+               model_config=None,
+               name="SimpleGraphModel"):
+        super(SimpleGraphModel, self).__init__(name=name)
+
+        self._model_config = model_config
+
+        if self._model_config['block_type'] == 'graphnet':
+            block_type = MLPGraphNetwork
+        elif self._model_config['block_type'] == 'deepsets':
+            block_type = MLPDeepSets
+
+        self._core = block_type(name="core", **self._model_config)
+
+        # Transforms the outputs into the appropriate shapes.
+        edge_fn = None
+        node_fn = None
+        global_fn = lambda: snt.Linear(1, name="global_output")
+
+        self._output_transform = modules.GraphIndependent(
+                edge_fn, node_fn, global_fn, name="network_output")
+
+    def __call__(self, input_op):
+        latent = self._core(input_op)
+        output = self._output_transform(latent)
+        return output, latent

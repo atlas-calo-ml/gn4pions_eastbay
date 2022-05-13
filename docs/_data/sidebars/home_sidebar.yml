@@ -13,6 +13,9 @@ entries:
       title: GraphDataGenerator
       url: data.html
     - output: web,pdf
+      title: 'GraphDataGenerator with tracks and no calorimeter data '
+      url: data_noCalirometer.html
+    - output: web,pdf
       title: Title
       url: models.html
     - output: web,pdf

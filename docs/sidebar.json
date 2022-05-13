@@ -2,6 +2,7 @@
   "gn4pions": {
     "Overview": "/",
     "GraphDataGenerator": "data.html",
+    "GraphDataGenerator with tracks and no calorimeter data ": "data_noCalirometer.html",
     "Title": "models.html",
     "Utility Functions": "utils.html"
   }
