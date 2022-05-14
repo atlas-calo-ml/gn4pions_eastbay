@@ -14,7 +14,7 @@ model:
   concat_input: False
   latent_size: 32
   num_blocks: 1
-  num_layers: 1
+  num_layers: 2
   reducer: sum
 training: 
   epochs: 30

@@ -17,7 +17,7 @@ model:
   latent_size: 32
   node_block_opt: {use_globals: true, use_nodes: true, use_received_edges: true, use_sent_edges: false}
   num_blocks: 1
-  num_layers: 1
+  num_layers: 2
   reducer: mean
 training: 
   epochs: 30

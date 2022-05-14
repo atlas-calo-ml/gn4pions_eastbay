@@ -17,7 +17,7 @@ import logging
 import tensorflow as tf
 import pandas as pd
 
-from gn4pions.modules.data_tracks import TrackGraphDataGenerator
+from gn4pions.modules.data_tracks import TrackDataGenerator
 import gn4pions.modules.models as models
 sns.set_context('poster')
 
@@ -73,7 +73,7 @@ if __name__=="__main__":
     if start_epoch:
         save_dir = restart
     else:
-        save_dir = train_config['save_dir'] + '/Block_mse_'+time.strftime("%Y%m%d_%H%M")+'_'+args.config.replace('.yaml','').split('/')[-1]
+        save_dir = train_config['save_dir'] + '/SingleNode_'+time.strftime("%Y%m%d_%H%M")+'_'+args.config.replace('.yaml','').split('/')[-1]
         os.makedirs(save_dir, exist_ok=True)
         yaml.dump(config, open(save_dir + '/config.yaml', 'w'))
 
@@ -112,7 +112,7 @@ if __name__=="__main__":
             train_output_dir = None
             val_output_dir = None
 
-    data_gen_train = TrackGraphDataGenerator(pion_file_list=pion_train_files,
+    data_gen_train = TrackDataGenerator(pion_file_list=pion_train_files,
                                              batch_size=batch_size,
                                              n_clusters=n_clusters,
                                              shuffle=shuffle,
@@ -120,7 +120,7 @@ if __name__=="__main__":
                                              preprocess=preprocess,
                                              output_dir=train_output_dir)
 
-    data_gen_val = TrackGraphDataGenerator(pion_file_list=pion_val_files,
+    data_gen_val = TrackDataGenerator(pion_file_list=pion_val_files,
                                            batch_size=batch_size,
                                            n_clusters=n_clusters,
                                            shuffle=shuffle,
@@ -137,7 +137,7 @@ if __name__=="__main__":
     logging.info('\nLearning rate set to: {:.5e}'.format(optimizer.learning_rate.value()))
     print('\nLearning rate set to: {:.5e}'.format(optimizer.learning_rate.value()))
 
-    model = models.MultiOutBlockModel(global_output_size=1, num_outputs=1, model_config=model_config)
+    model = models.SimpleGraphModel(model_config=model_config)
 
     checkpoint = tf.train.Checkpoint(module=model)
     best_ckpt_prefix = os.path.join(save_dir, 'best_model')
@@ -203,11 +203,10 @@ if __name__=="__main__":
     graph_spec = utils_tf.specs_from_graphs_tuple(samp_graph, True, True, True)
     
     mae_loss = tf.keras.losses.MeanAbsoluteError()
-    mse_loss = tf.keras.losses.MeanSquaredError()
     bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
     def loss_fn(targets, regress_preds):
-        regress_loss = mse_loss(targets, regress_preds)
+        regress_loss = mae_loss(targets, regress_preds)
         # class_loss = bce_loss(targets[:,1:], class_preds)
         # combined_loss = alpha*regress_loss + (1 - alpha)*class_loss 
         return regress_loss
@@ -215,7 +214,7 @@ if __name__=="__main__":
     @tf.function(input_signature=[graph_spec, tf.TensorSpec(shape=[None,], dtype=tf.float32)])
     def train_step(graphs, targets):
         with tf.GradientTape() as tape:
-            regress_output = model(graphs)[0]
+            regress_output, _ = model(graphs)
             regress_preds = regress_output.globals
             # class_preds = class_output.globals
             loss = loss_fn(targets, regress_preds)
@@ -227,7 +226,7 @@ if __name__=="__main__":
 
     @tf.function(input_signature=[graph_spec, tf.TensorSpec(shape=[None,], dtype=tf.float32)])
     def val_step(graphs, targets):
-        regress_output = model(graphs)[0]
+        regress_output, _ = model(graphs)
         regress_preds = regress_output.globals
         # class_preds = class_output.globals
         loss = loss_fn(targets, regress_preds)
@@ -299,7 +298,7 @@ if __name__=="__main__":
 
             if not (i-1)%log_freq:
                 end = time.time()
-                logging.info('Iter: {:04d}, Val_loss_mean: {:.6f}, Took {:.3f}secs'. \
+                logging.info('Iter: {:04d}, Val_loss_mean: {:.4f}, Took {:.3f}secs'. \
                       format(i, 
                              np.mean(val_loss), 
                              end-start))
@@ -330,9 +329,9 @@ if __name__=="__main__":
               format(e, training_mins, training_secs, val_mins, val_secs))
 
         if np.mean(val_loss)<curr_loss:
-            logging.info('\nLoss decreased from {:.6f} to {:.6f}'.format(curr_loss, np.mean(val_loss)))
+            logging.info('\nLoss decreased from {:.4f} to {:.4f}'.format(curr_loss, np.mean(val_loss)))
             logging.info('Checkpointing and saving predictions to:\n{}'.format(save_dir))
-            print('\nLoss decreased from {:.6f} to {:.6f}'.format(curr_loss, np.mean(val_loss)))
+            print('\nLoss decreased from {:.4f} to {:.4f}'.format(curr_loss, np.mean(val_loss)))
             print('Checkpointing and saving predictions to:\n{}'.format(save_dir))
             curr_loss = np.mean(val_loss)
             np.savez(save_dir+'/predictions', 
@@ -342,8 +341,8 @@ if __name__=="__main__":
             df_track.to_pickle(save_dir+'/track_meta_df.pkl')
             # df_cluster.to_pickle(save_dir+'/cluster_meta_df.pkl')
         else: 
-            logging.info('\nLoss didnt decrease from {:.6f}'.format(curr_loss))
-            print('\nLoss didnt decrease from {:.6f}'.format(curr_loss))
+            logging.info('\nLoss didnt decrease from {:.4f}'.format(curr_loss))
+            print('\nLoss didnt decrease from {:.4f}'.format(curr_loss))
 
         if (not (e+1)%LR_EPOCH) and optimizer.learning_rate>1e-6:
             optimizer.learning_rate = optimizer.learning_rate/2
