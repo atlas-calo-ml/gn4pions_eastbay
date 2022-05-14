@@ -33,6 +33,7 @@ if __name__=="__main__":
                         default='results/onetrack_multicluster/Block_large_20220512_1927_track_regress_noCell_ncluster_deepset/')
     args = parser.parse_args()
 
+    save_dir = args.save_dir
     config = yaml.load(open(args.save_dir + '/config.yaml'))
 
     data_config = config['data']
@@ -47,7 +48,7 @@ if __name__=="__main__":
     shuffle = data_config['shuffle']
     num_procs = data_config['num_procs']
     preprocess = data_config['preprocess']
-    output_dir = '/p/vast1/karande1/heavyIon/data/preprocessed_data/infer/tracks/'
+    output_dir = '/p/vast1/karande1/heavyIon/data/preprocessed_data/infer/tracks/' + save_dir.split('track_')[-1]
     already_preprocessed = data_config['already_preprocessed']
 
     concat_input = model_config['concat_input']
@@ -56,7 +57,6 @@ if __name__=="__main__":
     learning_rate = train_config['learning_rate']
     os.environ['CUDA_VISIBLE_DEVICES'] = str(train_config['gpu'])
     log_freq = train_config['log_freq']
-    save_dir = args.save_dir
 
     logging.basicConfig(level=logging.INFO, 
                         format='%(message)s', 
