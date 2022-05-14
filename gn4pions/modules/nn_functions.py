@@ -34,6 +34,12 @@ def load_data(file_path = "../data/onetrack_multicluster/pion_files/*.npy", n_fi
     df3 = pd.DataFrame(pd.DataFrame(df.cluster_HAD_WEIGHT.to_list(), columns=["cluster_had_weight_"+str(x) for x in np.arange(max_n_clusters)]))
     df2["cluster_had_weight_0"] = pd.DataFrame(df3["cluster_had_weight_0"]) # only keep the leading truth cluster energy
 
+    df3 = pd.DataFrame(pd.DataFrame(df.deltaR.to_list(), columns=["delta_r_"+str(x) for x in np.arange(max_n_clusters)]))
+    df2["delta_r_0"] = pd.DataFrame(df3["delta_r_0"]) 
+
+    df3 = pd.DataFrame(pd.DataFrame(df.dR_pass.to_list(), columns=["delta_r_pass_"+str(x) for x in np.arange(max_n_clusters)]))
+    df2["delta_r_pass_0"] = pd.DataFrame(df3["delta_r_pass_0"])     
+    
     ### Add track pT & truth particle E 
     track_pt = np.array(df.trackPt.explode())
     track_eta = np.array(df.trackEta.explode())
@@ -102,10 +108,10 @@ def train(df, train_vars, target_var, epochs=10):
     test_x = test[train_vars].values
     test_y = test[target_var].values
 
-    ### Normalize the inputs 
-    sc = StandardScaler()
-    train_x = sc.fit_transform(train_x)
-    test_x = sc.transform(test_x)
+#     ### Normalize the inputs 
+#     sc = StandardScaler()
+#     train_x = sc.fit_transform(train_x)
+#     test_x = sc.transform(test_x)
     
     model = regression_model(train_x)
     history = model.fit(
