@@ -24,7 +24,7 @@ def load_data(file_path = "../data/onetrack_multicluster/pion_files/*.npy", n_fi
     
     ### Start the dataframe of inputs 
     max_n_clusters = pd.DataFrame(pd.DataFrame(df.cluster_E.to_list())).shape[1]
-
+    
     df2 = pd.DataFrame(pd.DataFrame(df.cluster_E.to_list(), columns=["cluster_e_"+str(x) for x in np.arange(max_n_clusters)]))
     df2 = pd.DataFrame(df2["cluster_e_0"]) # only keep the leading cluster energy
 
@@ -34,11 +34,14 @@ def load_data(file_path = "../data/onetrack_multicluster/pion_files/*.npy", n_fi
     df3 = pd.DataFrame(pd.DataFrame(df.cluster_HAD_WEIGHT.to_list(), columns=["cluster_had_weight_"+str(x) for x in np.arange(max_n_clusters)]))
     df2["cluster_had_weight_0"] = pd.DataFrame(df3["cluster_had_weight_0"]) # only keep the leading truth cluster energy
 
+    if "dR" in df.keys():
+        df["deltaR"] = df["dR"]
+
     df3 = pd.DataFrame(pd.DataFrame(df.deltaR.to_list(), columns=["delta_r_"+str(x) for x in np.arange(max_n_clusters)]))
     df2["delta_r_0"] = pd.DataFrame(df3["delta_r_0"]) 
 
-    df3 = pd.DataFrame(pd.DataFrame(df.dR_pass.to_list(), columns=["delta_r_pass_"+str(x) for x in np.arange(max_n_clusters)]))
-    df2["delta_r_pass_0"] = pd.DataFrame(df3["delta_r_pass_0"])     
+#     df3 = pd.DataFrame(pd.DataFrame(df.dR_pass.to_list(), columns=["delta_r_pass_"+str(x) for x in np.arange(max_n_clusters)]))
+#     df2["delta_r_pass_0"] = pd.DataFrame(df3["delta_r_pass_0"])     
     
     ### Add track pT & truth particle E 
     track_pt = np.array(df.trackPt.explode())
@@ -98,7 +101,7 @@ def regression_model(train_x):
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
 
-def train(df, train_vars, target_var, epochs=10): 
+def train(df, train_vars, target_var, batch_size=512, epochs=10): 
     ### Test/train split 
     train = df.sample(frac=0.8, random_state=0)
     test = df.drop(train.index)
@@ -108,15 +111,16 @@ def train(df, train_vars, target_var, epochs=10):
     test_x = test[train_vars].values
     test_y = test[target_var].values
 
-#     ### Normalize the inputs 
-#     sc = StandardScaler()
-#     train_x = sc.fit_transform(train_x)
-#     test_x = sc.transform(test_x)
+    ### Normalize the inputs 
+    sc = StandardScaler()
+    train_x = sc.fit_transform(train_x)
+    test_x = sc.transform(test_x)
     
     model = regression_model(train_x)
     history = model.fit(
         train_x,
         train_y,
+        batch_size=batch_size,
         validation_split=0.2,
         verbose=1, epochs=epochs)
     
@@ -131,18 +135,21 @@ def make_plots(test, plot_em = False, plot_track = False, save_label=None):
     x = 10**target
     y = 10**pred/10**target
     
-    y_em = test.cluster_e_0/x
-#     y_track = test.track_pt/x
-    y_track = test.track_pt*np.cosh(test.track_eta)/x
-        
     ### Response median plot 
     xbin = [10**exp for exp in np.arange(-1., 3.1, 0.05)]
     ybin = np.arange(0., 3.1, 0.05)
     xcenter = [(xbin[i] + xbin[i+1]) / 2 for i in range(len(xbin)-1)]
     
-    median_em = stats.binned_statistic(x, y_em, bins=xbin, statistic='median').statistic
     median_nn = stats.binned_statistic(x, y, bins=xbin, statistic='median').statistic
-    median_track = stats.binned_statistic(x, y_track, bins=xbin, statistic='median').statistic
+    
+    if plot_em:
+        y_em = test.cluster_e_0/x
+        median_em = stats.binned_statistic(x, y_em, bins=xbin, statistic='median').statistic
+
+    if plot_track:
+#         y_track = test.track_pt/x
+        y_track = test.track_pt*np.cosh(test.track_eta)/x
+        median_track = stats.binned_statistic(x, y_track, bins=xbin, statistic='median').statistic
     
     plt.figure(dpi=100)
     c_map = ListedColormap(sns.color_palette("Blues", n_colors=100).as_hex())
@@ -187,9 +194,9 @@ def make_plots(test, plot_em = False, plot_track = False, save_label=None):
     ybin = np.arange(0., 3.1, 0.1)
     xcenter = [(xbin[i] + xbin[i+1]) / 2 for i in range(len(xbin)-1)]
 
-    iqr_em = stats.binned_statistic(x, y_em, bins=xbin, statistic=iqrOverMed).statistic
+    if plot_em: iqr_em = stats.binned_statistic(x, y_em, bins=xbin, statistic=iqrOverMed).statistic
     iqr_nn = stats.binned_statistic(x, y, bins=xbin, statistic=iqrOverMed).statistic
-    iqr_track = stats.binned_statistic(x, y_track, bins=xbin, statistic=iqrOverMed).statistic
+    if plot_track: iqr_track = stats.binned_statistic(x, y_track, bins=xbin, statistic=iqrOverMed).statistic
     
     ax = axs[1]
     ax.plot(xcenter, iqr_nn, linewidth=3, color='teal', label="NN")
