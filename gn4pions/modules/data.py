@@ -112,10 +112,8 @@ class GraphDataGenerator:
 
         self.cellGeo_data = ur.open(self.cellGeo_file)['CellGeo']
         self.geoFeatureNames = self.cellGeo_data.keys()[1:9]
-        self.nodeFeatureNames = ['cluster_cell_E']
-#         self.nodeFeatureNames = ['cluster_cell_E', *self.geoFeatureNames[:-2]]
-        self.edgeFeatureNames = []
-#         self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
+        self.nodeFeatureNames = ['cluster_cell_E', *self.geoFeatureNames[:-2]]
+        self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
         self.num_nodeFeatures = len(self.nodeFeatureNames)
         self.num_edgeFeatures = len(self.edgeFeatureNames)
         self.cellGeo_data = self.cellGeo_data.arrays(library='np')
@@ -154,22 +152,19 @@ class GraphDataGenerator:
         cell_IDmap = self.sorter[np.searchsorted(self.cellGeo_ID, cell_IDs, sorter=self.sorter)]
 
         global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])
-
-        nodes = [0]
-#         nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
-#         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap])
-#         for f in self.nodeFeatureNames[2:4]:
-#             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
-#         nodes = np.append(nodes, self.cellGeo_data['cell_geo_rPerp'][0][cell_IDmap])
-#         for f in self.nodeFeatureNames[5:]:
-#             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
+        nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap])
+        for f in self.nodeFeatureNames[2:4]:
+            nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
+        nodes = np.append(nodes, self.cellGeo_data['cell_geo_rPerp'][0][cell_IDmap])
+        for f in self.nodeFeatureNames[5:]:
+            nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
 
         nodes = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
         nodes_scaled = (np.concatenate(nodes) - scales['cluster_cell_e_mean'])/scales['cluster_cell_e_std']
         nodes_scaled = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
-#         nodes_scaled = np.zeros(2)
-#         nodes_scaled = (nodes - node_means)/node_stds
-        cluster_num_nodes = len(nodes_scaled)
+
+        nodes_scaled = (nodes - node_means)/node_stds
+        cluster_num_nodes = len(nodes)
 
 #         # add dummy placeholder nodes for track features (not used in cluster cell nodes)
 #         nodes = np.hstack((nodes, np.zeros((cluster_num_nodes, 4))))
@@ -320,9 +315,7 @@ class GraphDataGenerator:
                                              track_phi_scaled.astype(np.float32),
                                              ])
 
-                    graph = {
-                            'nodes': nodes.astype(np.float32),
-#                              'globals': global_node.astype(np.float32),
+                    graph = {'nodes': nodes.astype(np.float32),
                             'globals': globals_list,
                             'senders': senders.astype(np.int32),
                             'receivers': receivers.astype(np.int32),
