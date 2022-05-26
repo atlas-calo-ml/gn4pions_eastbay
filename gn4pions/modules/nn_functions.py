@@ -99,6 +99,7 @@ def regression_model(train_x):
     model.add(Dense(50, activation='relu'))
     model.add(Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
+    model.summary()
     return model
 
 def train(df, train_vars, target_var, batch_size=512, epochs=10): 
@@ -129,9 +130,9 @@ def train(df, train_vars, target_var, batch_size=512, epochs=10):
     test['nn_output'] = model.predict(test_x)
     return(test)
 
-def make_plots(test, plot_em = False, plot_track = False, save_label=None): 
-    pred   = test.nn_output
-    target = test.nn_target
+def make_plots(pred, target, plot_em = False, plot_track = False, save_label=None): 
+#     pred   = test.nn_output
+#     target = test.nn_target
     x = 10**target
     y = 10**pred/10**target
     
