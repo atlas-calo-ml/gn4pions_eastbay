@@ -152,6 +152,7 @@ class GraphDataGenerator:
         cell_IDmap = self.sorter[np.searchsorted(self.cellGeo_ID, cell_IDs, sorter=self.sorter)]
 
         global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])
+        nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap])
         for f in self.nodeFeatureNames[2:4]:
             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])

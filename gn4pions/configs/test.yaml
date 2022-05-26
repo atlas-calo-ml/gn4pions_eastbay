@@ -8,7 +8,7 @@ data:
   num_procs: 32
   preprocess: True
   output_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/onetrack_multicluster/preprocessed/
-  already_preprocessed: True
+  already_preprocessed: False
 model:
   block_type: deepsets
   concat_input: true
