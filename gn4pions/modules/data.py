@@ -111,8 +111,7 @@ class GraphDataGenerator:
 
         self.cellGeo_data = ur.open(self.cellGeo_file)['CellGeo']
         self.geoFeatureNames = self.cellGeo_data.keys()[1:9]
-        self.nodeFeatureNames = ['cluster_cell_E']
-#         self.nodeFeatureNames = ['cluster_cell_E', *self.geoFeatureNames[:-2]]
+        self.nodeFeatureNames = ['cluster_cell_E', *self.geoFeatureNames[:-2]]
         self.edgeFeatureNames = self.cellGeo_data.keys()[9:]
         self.num_nodeFeatures = len(self.nodeFeatureNames)
         self.num_edgeFeatures = len(self.edgeFeatureNames)
@@ -153,18 +152,18 @@ class GraphDataGenerator:
 
         nodes = np.log10(event_data['cluster_cell_E'][event_ind][cluster_ind])
         global_node = np.log10(event_data['cluster_E'][event_ind][cluster_ind])
-#         nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap])
-#         for f in self.nodeFeatureNames[2:4]:
-#             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
-#         nodes = np.append(nodes, self.cellGeo_data['cell_geo_rPerp'][0][cell_IDmap])
-#         for f in self.nodeFeatureNames[5:]:
-#             nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
+        nodes = np.append(nodes, self.cellGeo_data['cell_geo_sampling'][0][cell_IDmap])
+        for f in self.nodeFeatureNames[2:4]:
+            nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
+        nodes = np.append(nodes, self.cellGeo_data['cell_geo_rPerp'][0][cell_IDmap])
+        for f in self.nodeFeatureNames[5:]:
+            nodes = np.append(nodes, self.cellGeo_data[f][0][cell_IDmap])
 
         nodes = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
         nodes_scaled = (np.concatenate(nodes) - scales['cluster_cell_e_mean'])/scales['cluster_cell_e_std']
         nodes_scaled = np.reshape(nodes, (len(self.nodeFeatureNames), -1)).T
 
-#         nodes_scaled = (nodes - node_means)/node_stds
+        nodes_scaled = (nodes - node_means)/node_stds
         cluster_num_nodes = len(nodes)
 
 #         # add dummy placeholder nodes for track features (not used in cluster cell nodes)
@@ -316,7 +315,6 @@ class GraphDataGenerator:
                                              ])
 
                     graph = {'nodes': nodes.astype(np.float32),
-#                              'globals': global_node.astype(np.float32),
                             'globals': globals_list,
                             'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
                             'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
