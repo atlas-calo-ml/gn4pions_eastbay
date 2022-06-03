@@ -68,7 +68,7 @@ def resolutionPlot(x, y, figfile='', statistic='std',
                    xlabel='Truth Particle Energy', ylabel='Energy IQR over 2xMedian',
                    atlas_x=-1, atlas_y=-1, simulation=False,
                    textlist=[]):
-    xbin = [10**exp for exp in  np.arange(-1.0, 3.1, 0.1)]
+    xbin = [10**exp for exp in  np.arange(-1.0, 3.1, 0.05)]
     xcenter = [(xbin[i] + xbin[i+1]) / 2 for i in range(len(xbin)-1)]
     if statistic == 'std': # or any other baseline one?
         resolution = stats.binned_statistic(x, y, bins=xbin,statistic=statistic).statistic
@@ -83,7 +83,7 @@ def resolutionPlot(x, y, figfile='', statistic='std',
     plt.plot(xcenter, resolution)
     plt.xscale('log')
     plt.xlim(0.1, 1000)
-    plt.ylim(0,0.1)
+    plt.ylim(0,2)
     pu.ampl.set_xlabel(xlabel, fontsize=20)
     pu.ampl.set_ylabel(ylabel, fontsize=20)
 

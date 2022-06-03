@@ -17,7 +17,7 @@ import logging
 import tensorflow as tf
 import pandas as pd
 
-from gn4pions.modules.data_tracks import TrackGraphDataGenerator
+from gn4pions.modules.data_trackMultiCalo import MultiCaloTrackDataGenerator
 import gn4pions.modules.models as models
 sns.set_context('poster')
 
@@ -29,7 +29,7 @@ LR_EPOCH = 20
 if __name__=="__main__":
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='gn4pions/configs/track_regress_noCell.yaml')
+    parser.add_argument('--config', default='gn4pions/configs/trackMultiCalo_regress.yaml')
     parser.add_argument('--restart', default=None)
     args = parser.parse_args()
 
@@ -73,7 +73,7 @@ if __name__=="__main__":
     if start_epoch:
         save_dir = restart
     else:
-        save_dir = train_config['save_dir'] + '/Block_mae_'+time.strftime("%Y%m%d_%H%M")+'_'+args.config.replace('.yaml','').split('/')[-1]
+        save_dir = train_config['save_dir'] + '/Block_'+time.strftime("%Y%m%d_%H%M")+'_'+args.config.replace('.yaml','').split('/')[-1]
         os.makedirs(save_dir, exist_ok=True)
         yaml.dump(config, open(save_dir + '/config.yaml', 'w'))
 
@@ -112,21 +112,25 @@ if __name__=="__main__":
             train_output_dir = None
             val_output_dir = None
 
-    data_gen_train = TrackGraphDataGenerator(pion_file_list=pion_train_files,
-                                             batch_size=batch_size,
-                                             n_clusters=n_clusters,
-                                             shuffle=shuffle,
-                                             num_procs=num_procs,
-                                             preprocess=preprocess,
-                                             output_dir=train_output_dir)
+    cell_geo_file = '/usr/workspace/hip/ML4Jets/regression_images/graph_examples/cell_geo.root'
 
-    data_gen_val = TrackGraphDataGenerator(pion_file_list=pion_val_files,
-                                           batch_size=batch_size,
-                                           n_clusters=n_clusters,
-                                           shuffle=shuffle,
-                                           num_procs=num_procs,
-                                           preprocess=preprocess,
-                                           output_dir=val_output_dir)
+    data_gen_train = MultiCaloTrackDataGenerator(pion_file_list=pion_train_files,
+                                                 cellGeo_file=cell_geo_file,
+                                                 batch_size=batch_size,
+                                                 n_clusters=n_clusters,
+                                                 shuffle=shuffle,
+                                                 num_procs=num_procs,
+                                                 preprocess=preprocess,
+                                                 output_dir=train_output_dir)
+
+    data_gen_val = MultiCaloTrackDataGenerator(pion_file_list=pion_val_files,
+                                               cellGeo_file=cell_geo_file,
+                                               batch_size=batch_size,
+                                               n_clusters=n_clusters,
+                                               shuffle=shuffle,
+                                               num_procs=num_procs,
+                                               preprocess=preprocess,
+                                               output_dir=val_output_dir)
 
     # if preprocess and not already_preprocessed:
     #     exit()
@@ -163,7 +167,7 @@ if __name__=="__main__":
         for graph in graphs:
             nodes.append(graph['nodes'])
             edges.append(graph['edges'])
-            global_nodes.append(graph['globals'])
+            global_nodes.append([graph['globals']])
             senders.append(graph['senders'] + offset)
             receivers.append(graph['receivers'] + offset)
             n_node.append(graph['nodes'].shape[:1])
@@ -172,7 +176,7 @@ if __name__=="__main__":
             offset += len(graph['nodes'])
 
         nodes = tf.convert_to_tensor(np.concatenate(nodes))
-        edges = tf.convert_to_tensor(np.concatenate(edges))
+        edges = tf.convert_to_tensor(np.concatenate(edges), dtype=tf.float32)
         global_nodes = tf.convert_to_tensor(np.concatenate(global_nodes))
         senders = tf.convert_to_tensor(np.concatenate(senders))
         receivers = tf.convert_to_tensor(np.concatenate(receivers))
@@ -263,6 +267,11 @@ if __name__=="__main__":
             
             i += 1 
 
+        end = time.time()
+        logging.info('Iter: {:04d}, Tr_loss_mean: {:.6f}, Took {:.3f}secs'. \
+              format(i, 
+                     np.mean(training_loss), 
+                     end-start))
         training_loss_epoch.append(training_loss)
         training_end = time.time()
 
@@ -275,7 +284,7 @@ if __name__=="__main__":
         cluster_meta_cols = data_gen_val.cluster_feature_names
 
         df_track = pd.DataFrame(columns=track_meta_cols)
-        df_cluster = pd.DataFrame(columns=cluster_meta_cols)
+        # df_cluster = pd.DataFrame(columns=cluster_meta_cols)
 
         start = time.time()
         for graph_data_val, targets_val, track_meta_val, cluster_meta_val in get_batch(data_gen_val.generator()):#val_iter):
@@ -307,6 +316,11 @@ if __name__=="__main__":
             
             i += 1
 
+        end = time.time()
+        logging.info('Iter: {:04d}, Val_loss_mean: {:.6f}, Took {:.3f}secs'. \
+              format(i, 
+                     np.mean(val_loss), 
+                     end-start))
         epoch_end = time.time()
 
         all_targets = np.concatenate(all_targets)

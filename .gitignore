@@ -1,4 +1,7 @@
 results/
+outfiles/
+*.p
+*.tgz
 .jekyll-cache/
 Gemfile.lock  
 *.bak

@@ -2,12 +2,12 @@ data:
   data_dir: /usr/workspace/hip/ML4Jets/regression_images/graphs.v01-45-gaa27bcb/onetrack_multicluster/pion_files/
   num_train_files: 200
   num_val_files: 50
-  batch_size: 2048
-  n_clusters: -1
+  batch_size: 1024
+  use_geo_edges: True
   shuffle: False
   num_procs: 32
   preprocess: True
-  output_dir: /p/vast1/karande1/heavyIon/data/preprocessed_data/gn4pions/track_noCells_nClusters_deepset/
+  output_dir: /p/vast1/karande1/heavyIon/data/preprocessed_data/gn4pions/trackCalo_deepset/
   already_preprocessed: False
 model:
   block_type: deepsets
@@ -18,7 +18,7 @@ model:
   reducer: sum
 training: 
   epochs: 100
-  gpu: 3
+  gpu: 0
   learning_rate: 0.001
   log_freq: 100
   save_dir: results/onetrack_multicluster/ 

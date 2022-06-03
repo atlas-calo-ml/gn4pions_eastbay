@@ -161,7 +161,6 @@ class TrackGraphDataGenerator:
                     preprocessed_data.append((graph, target, track_meta_data, cluster_meta_data))
 
             random.shuffle(preprocessed_data)
-
             pickle.dump(preprocessed_data, open(self.output_dir + f'data_{file_num:03d}.p', 'wb'), compression='gzip')
 
             print(f"Finished processing {file_num} files")

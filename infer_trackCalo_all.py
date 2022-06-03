@@ -17,20 +17,20 @@ import logging
 import tensorflow as tf
 import pandas as pd
 
-from gn4pions.modules.data_tracks import TrackGraphDataGenerator
+from gn4pions.modules.data_trackMultiCalo import MultiCaloTrackDataGenerator
 import gn4pions.modules.models as models
 sns.set_context('poster')
 
 os.sys.path.append('../graph_nets/graph_nets/')
 from utils_tf import fully_connect_graph_dynamic
 
-LR_EPOCH = 15
+LR_EPOCH = 20
 
 if __name__=="__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--save_dir',
-                        default='results/onetrack_multicluster/Block_large_20220512_1927_track_regress_noCell_ncluster_deepset/')
+                        default='results/onetrack_multicluster/Block_20220602_2236_trackMultiCalo_regress/')
     args = parser.parse_args()
 
     save_dir = args.save_dir
@@ -48,8 +48,8 @@ if __name__=="__main__":
     shuffle = data_config['shuffle']
     num_procs = data_config['num_procs']
     preprocess = data_config['preprocess']
-    output_dir = '/p/vast1/karande1/heavyIon/data/preprocessed_data/infer/tracks/' + save_dir.split('track_')[-1]
-    already_preprocessed = data_config['already_preprocessed']
+    output_dir = '/p/vast1/karande1/heavyIon/data/preprocessed_data/infer/tracks/regress_trackCaloAll/' # + save_dir.split('trackCalo_')[-1]
+    already_preprocessed = False   # data_config['already_preprocessed']
 
     concat_input = model_config['concat_input']
 
@@ -81,13 +81,15 @@ if __name__=="__main__":
             val_output_dir = None
 
 
-    data_gen_val = TrackGraphDataGenerator(pion_file_list=pion_val_files,
-                                           batch_size=batch_size,
-                                           n_clusters=n_clusters,
-                                           shuffle=shuffle,
-                                           num_procs=num_procs,
-                                           preprocess=preprocess,
-                                           output_dir=val_output_dir)
+    cell_geo_file = '/usr/workspace/hip/ML4Jets/regression_images/graph_examples/cell_geo.root'
+    data_gen_val = MultiCaloTrackDataGenerator(pion_file_list=pion_val_files,
+                                               cellGeo_file=cell_geo_file,
+                                               batch_size=batch_size,
+                                               n_clusters=n_clusters,
+                                               shuffle=shuffle,
+                                               num_procs=num_procs,
+                                               preprocess=preprocess,
+                                               output_dir=val_output_dir)
 
     # if preprocess and not already_preprocessed:
     #     exit()
@@ -113,7 +115,7 @@ if __name__=="__main__":
         for graph in graphs:
             nodes.append(graph['nodes'])
             edges.append(graph['edges'])
-            global_nodes.append(graph['globals'])
+            global_nodes.append([graph['globals']])
             senders.append(graph['senders'] + offset)
             receivers.append(graph['receivers'] + offset)
             n_node.append(graph['nodes'].shape[:1])
@@ -122,7 +124,7 @@ if __name__=="__main__":
             offset += len(graph['nodes'])
 
         nodes = tf.convert_to_tensor(np.concatenate(nodes))
-        edges = tf.convert_to_tensor(np.concatenate(edges))
+        edges = tf.convert_to_tensor(np.concatenate(edges), dtype=tf.float32)
         global_nodes = tf.convert_to_tensor(np.concatenate(global_nodes))
         senders = tf.convert_to_tensor(np.concatenate(senders))
         receivers = tf.convert_to_tensor(np.concatenate(receivers))
@@ -188,7 +190,7 @@ if __name__=="__main__":
     val_loss = []
 
     df_track = pd.DataFrame(columns=track_meta_cols)
-    df_cluster = pd.DataFrame(columns=cluster_meta_cols)
+    # df_cluster = pd.DataFrame(columns=cluster_meta_cols)
 
     start = time.time()
     for graph_data_val, targets_val, track_meta_val, cluster_meta_val in get_batch(data_gen_val.generator()):#val_iter):
@@ -212,7 +214,11 @@ if __name__=="__main__":
 
         if not (i-1)%log_freq:
             end = time.time()
-            logging.info('Iter: {:04d}, Val_loss_mean: {:.4f}, Took {:.3f}secs'. \
+            logging.info('Iter: {:04d}, Val_loss_mean: {:.6f}, Took {:.3f}secs'. \
+                  format(i, 
+                         np.mean(val_loss), 
+                         end-start))
+            print('Iter: {:04d}, Val_loss_mean: {:.6f}, Took {:.3f}secs'. \
                   format(i, 
                          np.mean(val_loss), 
                          end-start))
@@ -227,3 +233,4 @@ if __name__=="__main__":
             targets=all_targets, 
             outputs=all_outputs)
     df_track.to_pickle(save_dir+'/track_meta_df_inference.pkl')
+    # df_cluster.to_pickle(save_dir+'/cluster_meta_df_inference.pkl')

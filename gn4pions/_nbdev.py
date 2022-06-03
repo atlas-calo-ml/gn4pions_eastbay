@@ -8,6 +8,8 @@ index = {"scales": "00_data.ipynb",
          "GraphDataGenerator": "00_data.ipynb",
          "TrackGraphDataGenerator": "00_data_noCalirometer.ipynb",
          "TrackDataGenerator": "00_data_noCalirometer.ipynb",
+         "CaloTrackGraphDataGenerator": "00_data_wTracks.ipynb",
+         "MultiCaloTrackDataGenerator": "00_data_wTracks_MultiCluster.ipynb",
          "make_mlp_model": "01_models.ipynb",
          "MLPGraphIndependent": "01_models.ipynb",
          "MLPGraphNetwork": "01_models.ipynb",
@@ -19,6 +21,8 @@ index = {"scales": "00_data.ipynb",
 
 modules = ["modules/data.py",
            "modules/data_tracks.py",
+           "modules/data_trackCalo.py",
+           "modules/data_trackMultiCalo.py",
            "modules/models.py",
            "modules/utils.py"]
 

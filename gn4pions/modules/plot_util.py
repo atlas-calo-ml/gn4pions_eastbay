@@ -14,7 +14,7 @@ params = {'legend.fontsize': 18,
           'axes.labelsize': 18}
 plt.rcParams.update(params)
 
-# ampl.set_color_cycle('Oceanic',10)
+ampl.set_color_cycle('Oceanic',10)
 
 def histogramOverlay(frames, data, labels, xlabel, ylabel, figfile = '', 
                         x_min = 0, x_max = 2200, xbins = 22, normed = True, y_log = False,
@@ -53,7 +53,7 @@ def histogramOverlay(frames, data, labels, xlabel, ylabel, figfile = '',
 def lineOverlay(xcenter, lines, labels, xlabel, ylabel, figfile = '',
                     x_min = 0.1, x_max = 1000, x_log = True, y_min = 0, y_max = 2, y_log = False,
                     linestyles=[], colorgrouping=-1, grouping_type='paired',
-                    extra_lines = [],
+                    extra_lines = [], colors=None,
                     atlas_x=-1, atlas_y=-1, simulation=False,
                     textlist=[]):
     plt.cla()
@@ -65,7 +65,9 @@ def lineOverlay(xcenter, lines, labels, xlabel, ylabel, figfile = '',
         print('extra_line {}'.format(extra_line))
         plt.plot(extra_line[0], extra_line[1], linestyle='--', color='black')
 
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    if not colors:
+        colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        print(colors)
 
     for i, line in enumerate(lines):
         if len(linestyles) > 0:
