@@ -1,5 +1,5 @@
 data: 
-  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/no_cuts_cluster_and_tracks/
+  data_dir: /clusterfs/ml4hep/mpettee/ml4pions/data/onetrack_multicluster/
   cell_geo_file: /clusterfs/ml4hep/mpettee/ml4pions/data/cell_geo.root
   num_train_files: 400
   num_val_files: 100
@@ -21,8 +21,8 @@ model:
   reducer: mean
 training: 
   alpha: .75 
-  epochs: 1
+  epochs: 10
   gpu: 1
   learning_rate: 0.001
   log_freq: 100
-  save_dir: results/no_cuts_cluster_and_tracks/ 
+  save_dir: results/onetrack_multicluster/ 

@@ -129,8 +129,8 @@ if __name__ == "__main__":
     def get_batch(data_iter):
         for graphs, targets in data_iter:
             targets = tf.convert_to_tensor(targets)
-            graphs, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas = convert_to_tuple(graphs)
-            yield graphs, targets, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas
+            graphs, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas, sum_cluster_es, sum_lcw_es = convert_to_tuple(graphs)
+            yield graphs, targets, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas, sum_cluster_es, sum_lcw_es
 
     # Define loss function        
     mae_loss = tf.keras.losses.MeanAbsoluteError()
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         return regress_loss#, combined_loss
 
     # Get a sample graph for tf.function decorator
-    samp_graph, samp_target, _, _, _, _, _, _, _, _, _ = next(get_batch(data_gen_train.generator()))
+    samp_graph, samp_target, _, _, _, _, _, _, _, _, _, _, _ = next(get_batch(data_gen_train.generator()))
     data_gen_train.kill_procs()
     graph_spec = utils_tf.specs_from_graphs_tuple(samp_graph, True, True, True)
 
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         # Train
         print('Training...')
         start = time.time()
-        for i, (graph_data_tr, targets_tr, _, _, _, _, _, _, _, _, _) in enumerate(get_batch(data_gen_train.generator())):
+        for i, (graph_data_tr, targets_tr, _, _, _, _, _, _, _, _, _, _, _) in enumerate(get_batch(data_gen_train.generator())):
             losses_tr = train_step(graph_data_tr, targets_tr)
 
             training_loss.append(losses_tr.numpy())
@@ -244,9 +244,11 @@ if __name__ == "__main__":
         all_truth_particle_pts = []
         all_track_pts = []
         all_track_etas = []
+        all_sum_cluster_es = []
+        all_sum_lcw_es = []
         
         start = time.time()
-        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val, cluster_calib_es_val, cluster_had_weights_val, truth_particle_es_val, truth_particle_pts_val, track_pts_val, track_etas_val) in enumerate(get_batch(data_gen_val.generator())):
+        for i, (graph_data_val, targets_val, energies_val, etas_val, em_probs_val, cluster_calib_es_val, cluster_had_weights_val, truth_particle_es_val, truth_particle_pts_val, track_pts_val, track_etas_val, sum_cluster_es_val, sum_lcw_es_val) in enumerate(get_batch(data_gen_val.generator())):
             losses_val, regress_vals = val_step(graph_data_val, targets_val)
 
             targets_val = targets_val.numpy()
@@ -274,6 +276,8 @@ if __name__ == "__main__":
             all_truth_particle_pts.append(truth_particle_pts_val)
             all_track_pts.append([pt for pt in track_pts_val])
             all_track_etas.append(track_etas_val)
+            all_sum_cluster_es.append(sum_cluster_es_val)
+            all_sum_lcw_es.append(sum_lcw_es_val)
 
             if not (i-1)%log_freq:
                 end = time.time()
@@ -297,6 +301,8 @@ if __name__ == "__main__":
         all_truth_particle_pts = np.concatenate(all_truth_particle_pts) 
         all_track_pts = np.concatenate(all_track_pts) 
         all_track_etas = np.concatenate(all_track_etas) 
+        all_sum_cluster_es = np.concatenate(all_sum_cluster_es) 
+        all_sum_lcw_es = np.concatenate(all_sum_lcw_es)
 
         val_loss_epoch.append(val_loss)
 #         val_loss_regress_epoch.append(val_loss_regress)
@@ -336,7 +342,9 @@ if __name__ == "__main__":
                     truth_particle_es=all_truth_particle_es,
                     truth_particle_pts=all_truth_particle_pts,
                     track_pts=all_track_pts,
-                    track_etas=all_track_etas)
+                    track_etas=all_track_etas,
+                    sum_cluster_es=all_sum_cluster_es,
+                    sum_lcw_es=all_sum_lcw_es)
             checkpoint.save(checkpoint_prefix)
         else: 
             print(f'Loss didnt decrease from {curr_loss:.4f}')

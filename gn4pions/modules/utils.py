@@ -26,6 +26,8 @@ def convert_to_tuple(graphs):
     truth_particle_pts = []
     track_pts = []
     track_etas = []
+    sum_cluster_energies = []
+    sum_lcw_energies = []
 
     for graph in graphs:
         nodes.append(graph['nodes'])
@@ -44,6 +46,8 @@ def convert_to_tuple(graphs):
         truth_particle_pts.append(graph['truthPartPt'])
         track_pts.append(graph['track_pt'])
         track_etas.append(graph['track_eta'])
+        sum_cluster_energies.append(graph['sum_cluster_E'])
+        sum_lcw_energies.append(graph['sum_lcw_E'])
 
         offset += len(graph['nodes'])
 
@@ -65,4 +69,4 @@ def convert_to_tuple(graphs):
             n_edge=n_edge
         )
 
-    return graph, cluster_energies, cluster_etas, cluster_EM_probs, cluster_calib_Es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas
+    return graph, cluster_energies, cluster_etas, cluster_EM_probs, cluster_calib_Es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas, sum_cluster_energies, sum_lcw_energies
