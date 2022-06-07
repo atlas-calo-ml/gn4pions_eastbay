@@ -35,7 +35,7 @@ def convert_to_tuple(graphs):
         receivers.append(graph['receivers'] + offset)
         n_node.append(graph['nodes'].shape[:1])
         n_edge.append(graph['edges'].shape[:1])
-        cluster_energies.append(graph['cluster_E'])
+        cluster_energies.append(graph['cluster_E_0'])
         cluster_etas.append(graph['cluster_eta'])
         cluster_EM_probs.append(graph['cluster_EM_prob'])
         cluster_calib_Es.append(graph['cluster_calib_E'])
