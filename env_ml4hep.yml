@@ -176,8 +176,6 @@ dependencies:
   - threadpoolctl=3.0.0=pyh8a188c0_0
   - tk=8.6.11=h27826a3_1
   - tornado=6.1=py39h3811e60_2
-  - typing-extensions=3.7.4.3=0
-  - typing_extensions=3.7.4.3=py_0
   - tzdata=2021e=he74cb21_0
   - uproot=4.1.8=py39hf3d152e_0
   - uproot-base=4.1.8=pyhd49a682_0
@@ -198,10 +196,13 @@ dependencies:
   - pip:
     - anyio==3.4.0
     - argon2-cffi==21.1.0
+    - argparse==1.4.0
     - atlas-mpl-style==0.20.0
+    - awkward0==0.15.5
     - babel==2.9.1
     - backcall==0.2.0
     - bleach==4.1.0
+    - bokeh==2.4.3
     - compress-pickle==2.1.0
     - debugpy==1.5.1
     - decorator==5.1.0
@@ -230,6 +231,7 @@ dependencies:
     - jupyterlab==3.2.4
     - jupyterlab-server==2.8.2
     - jupyterlab-widgets==1.0.2
+    - livelossplot==0.5.5
     - markupsafe==2.0.1
     - matplotlib-inline==0.1.3
     - mistune==0.8.4
@@ -262,6 +264,9 @@ dependencies:
     - testpath==0.5.0
     - tqdm==4.62.3
     - traitlets==5.1.1
+    - typing-extensions==4.2.0
+    - uproot3==3.14.4
+    - uproot3-methods==0.10.1
     - wcwidth==0.2.5
     - webencodings==0.5.1
     - websocket-client==1.2.1
