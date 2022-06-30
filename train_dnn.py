@@ -7,6 +7,7 @@ from tqdm import tqdm
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.layers import Dense
+from keras import callbacks
 from keras.models import Sequential
 from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.model_selection import cross_val_score
@@ -19,106 +20,111 @@ physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 ### Load data (multiple files)
-n_files = 400
-files = glob.glob("../data/onetrack_multicluster/pion_files/*.npy")
-df = pd.concat([pd.DataFrame(np.load(file, allow_pickle=True).item()) for file in tqdm(files[:n_files])])
-print("Dataframe has {:,} events.".format(df.shape[0]))
+# n_files = 10 #400
+# files = glob.glob("../data/onetrack_multicluster/pion_files/*.npy")
+# df = pd.concat([pd.DataFrame(np.load(file, allow_pickle=True).item()) for file in tqdm(files[:n_files])])
+# print("Dataframe has {:,} events.".format(df.shape[0]))
 
-### Start the dataframe of inputs 
-# df2 = pd.DataFrame(pd.DataFrame(df.cluster_E.to_list())[0]) # just take the leading cluster E 
-max_n_clusters = pd.DataFrame(pd.DataFrame(df.cluster_E.to_list())).shape[1]
-df2 = pd.DataFrame(pd.DataFrame(df.cluster_E.to_list(), columns=["cluster_e_"+str(x) for x in np.arange(max_n_clusters)]))
+# ### Start the dataframe of inputs 
+# max_n_clusters = pd.DataFrame(pd.DataFrame(df.cluster_E.to_list())).shape[1]
+# df2 = pd.DataFrame(pd.DataFrame(df.cluster_E.to_list(), columns=["cluster_e_"+str(x) for x in np.arange(max_n_clusters)]))
 
-### Add track pT & truth particle E 
-track_pt = np.array(df.trackPt.explode())
-truth_particle_e = np.array(df.truthPartE.explode())
-track_eta = np.array(df.trackEta.explode())
-track_phi = np.array(df.trackPhi.explode())
-track_z0 = np.array(df.trackZ0.explode())
+# ### Add track pT & truth particle E 
+# track_pt = np.array(df.trackPt.explode())
+# truth_particle_e = np.array(df.truthPartE.explode())
+# track_eta = np.array(df.trackEta.explode())
+# track_phi = np.array(df.trackPhi.explode())
+# track_z0 = np.array(df.trackZ0.explode())
 
-df2["track_pt"] = track_pt
-df2["track_eta"] = track_eta
-df2["track_phi"] = track_phi
-df2["track_z0"] = track_z0
-df2["truth_particle_e"] = truth_particle_e
+# df2["track_pt"] = track_pt
+# df2["track_eta"] = track_eta
+# df2["track_phi"] = track_phi
+# df2["track_z0"] = track_z0
+# df2["truth_particle_e"] = truth_particle_e
 
-### Drop infs/NaNs 
-df2.replace([np.inf, -np.inf], np.nan, inplace=True)
-df2 = df2.fillna(0)
+# ### Drop infs/NaNs 
+# df2.replace([np.inf, -np.inf], np.nan, inplace=True)
+# df2 = df2.fillna(0)
 
-### Cluster_E > 0.5
-df2 = df2[df2.cluster_e_0 > 0.5]
+# ### Cluster_E > 0.5
+# df2 = df2[df2.cluster_e_0 > 0.5]
 
-### Lose outliers in track pT 
-df2 = df2[df2.track_pt < 5000]
+# ### Lose outliers in track pT 
+# df2 = df2[df2.track_pt < 5000]
 
-### Cast as float
-df2 = df2.astype('float32')
+# ### Cast as float
+# df2 = df2.astype('float32')
 
-### Add the log of all energy variables
-for var in df2.keys():
-    if var in ["track_eta", "track_phi", "track_z0"]:
-        continue
-    else:
-        df2['log10_'+var] = np.log10(df2[var])
+# ### Add the log of all energy variables
+# for var in df2.keys():
+#     if var in ["track_eta", "track_phi", "track_z0"]:
+#         continue
+#     else:
+#         df2['log10_'+var] = np.log10(df2[var])
     
-### Do this again? 
-df2.replace([np.inf, -np.inf], np.nan, inplace=True)
-df2 = df2.fillna(0)
+# ### Do this again? 
+# df2.replace([np.inf, -np.inf], np.nan, inplace=True)
+# df2 = df2.fillna(0)
 
-### Test/train split 
-train = df2.sample(frac=0.8, random_state=0)
-test = df2.drop(train.index)
+# ### Test/train split 
+# train = df2.sample(frac=0.8, random_state=0)
+# test = df2.drop(train.index)
 
-train_vars = [
-    'log10_cluster_e_0', 
-    'log10_cluster_e_1', 
-    'log10_cluster_e_2', 
-    'log10_cluster_e_3', 
-    'log10_cluster_e_4', 
-    'log10_cluster_e_5', 
-    'log10_cluster_e_6', 
-    'log10_cluster_e_7', 
-    'log10_cluster_e_8', 
-    'log10_cluster_e_9', 
-    'log10_track_pt',
-    'track_eta',
-    'track_phi',
-    'track_z0'
-             ]
+train = pd.read_hdf("train_dnn.h5")
+val = pd.read_hdf("val_dnn.h5")
+test = pd.read_hdf("test_dnn.h5")
 
 ### All clusters + track eta/phi/z0
-# train_vars = [var for var in df2.keys() if var.startswith('log10') and var != 'log10_truth_particle_e']
-# train_vars += ['track_eta', 'track_phi', 'track_z0']
+train_vars = [var for var in test.keys() if var.startswith('log10') and var != 'log10_truth_particle_e']
+train_vars += ['track_eta', 'track_phi', 'track_z0']
+
+print("Training variables: {}".format(train_vars))
 
 train_x = train[train_vars].values
 train_y = train['log10_truth_particle_e'].values
+val_x = val[train_vars].values
+val_y = val['log10_truth_particle_e'].values
 test_x = test[train_vars].values
 test_y = test['log10_truth_particle_e'].values
 
 ### Normalize the inputs 
 sc = StandardScaler()
 train_x = sc.fit_transform(train_x)
+val_x = sc.transform(val_x)
 test_x = sc.transform(test_x)
 
 def regression_model():
     model = Sequential()
-    model.add(Dense(50, input_dim=train_x.shape[1], activation='relu'))
-    model.add(Dense(50, activation='relu'))
-    model.add(Dense(50, activation='relu'))
+    model.add(Dense(64, input_dim=train_x.shape[1], activation='relu'))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(64, activation='relu'))
     model.add(Dense(1))
-    model.compile(loss='mean_squared_error', optimizer='adam')
+    model.compile(loss='mean_absolute_error', optimizer='adam')
     return model
 
 model = regression_model()
 print(model.summary())
 
+early_stopping = callbacks.EarlyStopping(monitor='val_loss', 
+                                         patience=10, 
+                                         verbose=0) 
+
+### Save the best weights
+weights_path = os.path.join("dnn_best_weights.h5")
+checkpoint = callbacks.ModelCheckpoint(weights_path, 
+                                       monitor='loss', 
+                                       mode='auto', 
+                                       verbose=0, 
+                                       save_best_only=True, 
+                                       save_weights_only=True)
 history = model.fit(
     train_x,
     train_y,
-    validation_split=0.2,
-    verbose=1, epochs=10)
-
+    validation_data = (val_x, val_y),
+    # validation_split=0.2,
+    verbose=1, epochs=100, 
+    batch_size=1000,
+    callbacks=[early_stopping, checkpoint])
 
 ### Evaluate performance on test set 
 test['nn_output'] = model.predict(test_x)
@@ -132,7 +138,7 @@ from matplotlib.colors import LogNorm
 x = test.truth_particle_e
 y = 10**test.nn_output/test.truth_particle_e
 
-xbin = [10**exp for exp in np.arange(-1., 3.1, 0.1)]
+xbin = [10**exp for exp in np.arange(-1., 3.1, 0.05)]
 ybin = np.arange(0., 3.1, 0.05)
 xcenter = [(xbin[i] + xbin[i+1]) / 2 for i in range(len(xbin)-1)]
 profileXMed = stats.binned_statistic(
@@ -149,8 +155,8 @@ plt.ylim(0, 1.75)
 plt.xlim(0.3, )
 plt.xlabel('Truth Particle Energy [GeV]')
 plt.ylabel('Predicted Energy / Target');
-np.savez('pub_note_results/response_median_dnn.npz', response_median=profileXMed, xcenter=xcenter)
-plt.savefig('pub_note_results/response_median_dnn.png')
+np.savez('pub_note_results/response_median_dnn_test.npz', response_median=profileXMed, xcenter=xcenter)
+plt.savefig('pub_note_results/response_median_dnn_test.png')
 
 ### IQR plot 
 
@@ -161,6 +167,9 @@ def iqrOverMed(x):
     iqr = q84 - q16
     med = np.median(x)
     return iqr / (2*med)
+
+xbin = [10**exp for exp in np.arange(-1., 3.1, 0.1)]
+xcenter = [(xbin[i] + xbin[i+1]) / 2 for i in range(len(xbin)-1)]
 
 resolution = stats.binned_statistic(x, y, bins=xbin,statistic=iqrOverMed).statistic
 
@@ -173,5 +182,5 @@ plt.ylim(0,0.5)
 plt.xlabel('Truth Particle Energy [GeV]')
 plt.ylabel('Response IQR / 2 x Median');
 
-np.savez('pub_note_results/iqr_dnn.npz', iqr=resolution, xcenter=xcenter)
-plt.savefig('pub_note_results/iqr_dnn.png')
+np.savez('pub_note_results/iqr_dnn_test.npz', iqr=resolution, xcenter=xcenter)
+plt.savefig('pub_note_results/iqr_dnn_test.png')
