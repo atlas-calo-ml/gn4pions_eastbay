@@ -19,57 +19,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 physical_devices = tf.config.list_physical_devices('GPU') 
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-### Load data (multiple files)
-# n_files = 10 #400
-# files = glob.glob("../data/onetrack_multicluster/pion_files/*.npy")
-# df = pd.concat([pd.DataFrame(np.load(file, allow_pickle=True).item()) for file in tqdm(files[:n_files])])
-# print("Dataframe has {:,} events.".format(df.shape[0]))
-
-# ### Start the dataframe of inputs 
-# max_n_clusters = pd.DataFrame(pd.DataFrame(df.cluster_E.to_list())).shape[1]
-# df2 = pd.DataFrame(pd.DataFrame(df.cluster_E.to_list(), columns=["cluster_e_"+str(x) for x in np.arange(max_n_clusters)]))
-
-# ### Add track pT & truth particle E 
-# track_pt = np.array(df.trackPt.explode())
-# truth_particle_e = np.array(df.truthPartE.explode())
-# track_eta = np.array(df.trackEta.explode())
-# track_phi = np.array(df.trackPhi.explode())
-# track_z0 = np.array(df.trackZ0.explode())
-
-# df2["track_pt"] = track_pt
-# df2["track_eta"] = track_eta
-# df2["track_phi"] = track_phi
-# df2["track_z0"] = track_z0
-# df2["truth_particle_e"] = truth_particle_e
-
-# ### Drop infs/NaNs 
-# df2.replace([np.inf, -np.inf], np.nan, inplace=True)
-# df2 = df2.fillna(0)
-
-# ### Cluster_E > 0.5
-# df2 = df2[df2.cluster_e_0 > 0.5]
-
-# ### Lose outliers in track pT 
-# df2 = df2[df2.track_pt < 5000]
-
-# ### Cast as float
-# df2 = df2.astype('float32')
-
-# ### Add the log of all energy variables
-# for var in df2.keys():
-#     if var in ["track_eta", "track_phi", "track_z0"]:
-#         continue
-#     else:
-#         df2['log10_'+var] = np.log10(df2[var])
-    
-# ### Do this again? 
-# df2.replace([np.inf, -np.inf], np.nan, inplace=True)
-# df2 = df2.fillna(0)
-
-# ### Test/train split 
-# train = df2.sample(frac=0.8, random_state=0)
-# test = df2.drop(train.index)
-
+### Load data
 train = pd.read_hdf("train_dnn.h5")
 val = pd.read_hdf("val_dnn.h5")
 test = pd.read_hdf("test_dnn.h5")
@@ -106,11 +56,11 @@ model = regression_model()
 print(model.summary())
 
 early_stopping = callbacks.EarlyStopping(monitor='val_loss', 
-                                         patience=10, 
+                                         patience=30, 
                                          verbose=0) 
 
 ### Save the best weights
-weights_path = os.path.join("dnn_best_weights.h5")
+weights_path = os.path.join("dnn_best_weights_64.h5")
 checkpoint = callbacks.ModelCheckpoint(weights_path, 
                                        monitor='loss', 
                                        mode='auto', 
@@ -121,14 +71,12 @@ history = model.fit(
     train_x,
     train_y,
     validation_data = (val_x, val_y),
-    # validation_split=0.2,
-    verbose=1, epochs=100, 
-    batch_size=1000,
+    verbose=1, epochs=300, 
+    batch_size=1024,
     callbacks=[early_stopping, checkpoint])
 
 ### Evaluate performance on test set 
 test['nn_output'] = model.predict(test_x)
-# plt.hist(test.nn_output/test.log10_truth_particle_e, bins=np.linspace(0.9,1.1,40));
 
 ### Response median plot 
 import scipy.stats as stats
@@ -155,8 +103,8 @@ plt.ylim(0, 1.75)
 plt.xlim(0.3, )
 plt.xlabel('Truth Particle Energy [GeV]')
 plt.ylabel('Predicted Energy / Target');
-np.savez('pub_note_results/response_median_dnn_test.npz', response_median=profileXMed, xcenter=xcenter)
-plt.savefig('pub_note_results/response_median_dnn_test.png')
+np.savez('pub_note_results/response_median_dnn_64.npz', response_median=profileXMed, xcenter=xcenter)
+plt.savefig('pub_note_results/response_median_dnn_64.png')
 
 ### IQR plot 
 
@@ -182,5 +130,5 @@ plt.ylim(0,0.5)
 plt.xlabel('Truth Particle Energy [GeV]')
 plt.ylabel('Response IQR / 2 x Median');
 
-np.savez('pub_note_results/iqr_dnn_test.npz', iqr=resolution, xcenter=xcenter)
-plt.savefig('pub_note_results/iqr_dnn_test.png')
+np.savez('pub_note_results/iqr_dnn_64.npz', iqr=resolution, xcenter=xcenter)
+plt.savefig('pub_note_results/iqr_dnn_64.png')
