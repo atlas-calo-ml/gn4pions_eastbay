@@ -261,13 +261,19 @@ class GraphDataGenerator:
             preprocessed_data = []
 
             for event_ind in range(num_events):
+                # print("=======EVENT=========")
                 num_clusters = event_data['nCluster'][event_ind]
+                # print("This event has {} clusters.".format(num_clusters))
                 truth_particle_E = np.log10(event_data['truthPartE'][event_ind][0])
+                # print("Target particle E =", event_data['truthPartE'][event_ind][0])
                 truth_particle_E_scaled = (truth_particle_E - scales['truth_part_e_mean'])/scales['truth_part_e_std']
                 truthPartPt = event_data['truthPartPt'][event_ind][0]
                 sum_cluster_E = np.sum(event_data['cluster_E'][event_ind]) # sum of all cluster energies in the event
-                sum_lcw_E = np.sum(event_data['cluster_E'][event_ind]*event_data['cluster_HAD_WEIGHT'][event_ind])
-
+                # sum_lcw_E = np.sum(event_data['cluster_E'][event_ind]*event_data['cluster_HAD_WEIGHT'][event_ind])
+                sum_lcw_E = np.sum(event_data['cluster_E_LCCalib'][event_ind])
+                # print("Cluster energies...", event_data['cluster_E'][event_ind])
+                # print("Sum of cluster energies = {}".format(sum_cluster_E))
+                # print("Sum of calibrated energies = {}".format(sum_lcw_E))
                 for i in range(num_clusters):
 #                     if event_data['dR_pass'][event_ind][i] == False:
 #                         continue
