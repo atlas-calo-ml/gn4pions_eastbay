@@ -16,7 +16,7 @@ def responsePlot(x, y, figfile='', statistic='median',
                  xlabel='Truth Particle Energy [GeV]', ylabel='Predicted Energy / Truth Particle Energy',
                  atlas_x=-1, atlas_y=-1, simulation=False, make_plot=True,
                  textlist=[]):
-    xbin = [10**exp for exp in np.arange(-1., 3.1, 0.05)]
+    xbin = [10**exp for exp in np.arange(-1., 3.1, 0.1)]
     ybin = np.arange(0., 3.1, 0.05)
     xcenter = [(xbin[i] + xbin[i+1]) / 2 for i in range(len(xbin)-1)]
     profileXMed = stats.binned_statistic(
