@@ -186,7 +186,7 @@ def make_plot(items, figfile = '',
 def drawLabels(fig, atlas_x=-1, atlas_y=-1, simulation=False,
                textlist=[]):
     if atlas_x >= 0 and atlas_y >= 0:
-        ampl.draw_atlas_label(atlas_x, atlas_y, simulation=simulation, fontsize=18)
+        ampl.draw_atlas_label(atlas_x, atlas_y, status='prelim', simulation=simulation, fontsize=18)
 
     for textdict in textlist:
         fig.axes[0].text(
