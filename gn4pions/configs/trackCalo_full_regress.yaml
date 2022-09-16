@@ -1,6 +1,6 @@
 data: 
   data_dir: /usr/workspace/hip/ML4Jets/regression_images/graphs.v01-45-gaa27bcb/onetrack_multicluster/pion_files/
-  num_train_files: 200
+  num_train_files: 350
   num_val_files: 50
   batch_size: 1024
   use_geo_edges: False

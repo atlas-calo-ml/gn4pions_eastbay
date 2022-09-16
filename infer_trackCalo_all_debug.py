@@ -2,7 +2,7 @@ import numpy as np
 import os
 import sys
 import glob
-import uproot as ur
+# import uproot as ur
 import matplotlib.pyplot as plt
 import time
 import seaborn as sns
@@ -17,20 +17,20 @@ import logging
 import tensorflow as tf
 import pandas as pd
 
-from gn4pions.modules.data_trackCalo import CaloTrackGraphDataGenerator
+from gn4pions.modules.data_trackMultiCalo import MultiCaloTrackInferData
 import gn4pions.modules.models as models
 sns.set_context('poster')
 
 os.sys.path.append('../graph_nets/graph_nets/')
 from utils_tf import fully_connect_graph_dynamic
 
-LR_EPOCH = 15
+LR_EPOCH = 20
 
 if __name__=="__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--save_dir',
-                        default='results/onetrack_multicluster/Block_20220527_1627_trackCalo_regress/')
+                        default='results/onetrack_multicluster/Block_20220602_2236_trackMultiCalo_regress/')
     args = parser.parse_args()
 
     save_dir = args.save_dir
@@ -44,12 +44,12 @@ if __name__=="__main__":
     num_train_files = data_config['num_train_files']
     num_val_files = data_config['num_val_files']
     batch_size = data_config['batch_size']
-    use_geo_edges = data_config['use_geo_edges']
+    n_clusters = data_config['n_clusters']
     shuffle = data_config['shuffle']
     num_procs = data_config['num_procs']
     preprocess = data_config['preprocess']
-    output_dir = '/p/vast1/karande1/heavyIon/data/preprocessed_data/infer/tracks/regress_trackCaloLeading/' # + save_dir.split('trackCalo_')[-1]
-    already_preprocessed = True   # data_config['already_preprocessed']
+    output_dir = '/p/vast1/karande1/heavyIon/data/preprocessed_data/infer/tracks/regress_trackCaloAll_debug/' # + save_dir.split('trackCalo_')[-1]
+    already_preprocessed = False   # data_config['already_preprocessed']
 
     concat_input = model_config['concat_input']
 
@@ -60,36 +60,24 @@ if __name__=="__main__":
 
     logging.basicConfig(level=logging.INFO, 
                         format='%(message)s', 
-                        filename=save_dir + '/infer_output.log')
+                        filename=save_dir + '/infer_output_debug.log')
     logging.info('Using config file from {}'.format(args.save_dir)) 
 
-    pion_files = np.sort(glob.glob(data_dir+'/*npy'))
-    val_start = 400
-    pion_val_files = pion_files[val_start:]
-
-    val_output_dir = None
+    pion_file = 'df_transformer_debug.pkl'
             
     # Get Data
     if preprocess:
         val_output_dir = output_dir + '/test/'
 
-        if already_preprocessed:
-            val_files = np.sort(glob.glob(val_output_dir+'*.p'))# [:num_val_files]
-
-            pion_val_files = val_files
-
-            val_output_dir = None
-
-
     cell_geo_file = '/usr/workspace/hip/ML4Jets/regression_images/graph_examples/cell_geo.root'
-    data_gen_val = CaloTrackGraphDataGenerator(pion_file_list=pion_val_files,
-                                               cellGeo_file=cell_geo_file,
-                                               batch_size=batch_size,
-                                               use_geo_edges=use_geo_edges,
-                                               shuffle=shuffle,
-                                               num_procs=num_procs,
-                                               preprocess=preprocess,
-                                               output_dir=val_output_dir)
+    data_gen_val = MultiCaloTrackInferData(pion_file=pion_file,
+                                           cellGeo_file=cell_geo_file,
+                                           batch_size=batch_size,
+                                           n_clusters=n_clusters,
+                                           shuffle=shuffle,
+                                           num_procs=num_procs,
+                                           preprocess=preprocess,
+                                           output_dir=val_output_dir)
 
     # if preprocess and not already_preprocessed:
     #     exit()
@@ -190,7 +178,7 @@ if __name__=="__main__":
     val_loss = []
 
     df_track = pd.DataFrame(columns=track_meta_cols)
-    df_cluster = pd.DataFrame(columns=cluster_meta_cols)
+    # df_cluster = pd.DataFrame(columns=cluster_meta_cols)
 
     start = time.time()
     for graph_data_val, targets_val, track_meta_val, cluster_meta_val in get_batch(data_gen_val.generator()):#val_iter):
@@ -209,8 +197,8 @@ if __name__=="__main__":
 
         track_meta_val = np.array(track_meta_val)
         df_track = df_track.append(pd.DataFrame(track_meta_val.squeeze(), columns=track_meta_cols))
-        cluster_meta_val = np.array(cluster_meta_val)
-        df_cluster = df_cluster.append(pd.DataFrame(cluster_meta_val.squeeze(), columns=cluster_meta_cols))
+        # cluster_meta_val = np.array(cluster_meta_val)
+        # df_cluster = df_cluster.append(pd.DataFrame(cluster_meta_val.squeeze(), columns=cluster_meta_cols))
 
         if not (i-1)%log_freq:
             end = time.time()
@@ -239,8 +227,8 @@ if __name__=="__main__":
     all_targets = np.concatenate(all_targets)
     all_outputs = np.concatenate(all_outputs)
     
-    np.savez(save_dir+'/inference_predictions', 
+    np.savez(save_dir+'/inference_predictions_debug', 
             targets=all_targets, 
             outputs=all_outputs)
-    df_track.to_pickle(save_dir+'/track_meta_df_inference.pkl')
-    df_cluster.to_pickle(save_dir+'/cluster_meta_df_inference.pkl')
+    df_track.to_pickle(save_dir+'/track_meta_df_inference_debug.pkl')
+    # df_cluster.to_pickle(save_dir+'/cluster_meta_df_inference.pkl')

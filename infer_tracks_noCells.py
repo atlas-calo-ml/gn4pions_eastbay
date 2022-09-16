@@ -49,7 +49,7 @@ if __name__=="__main__":
     num_procs = data_config['num_procs']
     preprocess = data_config['preprocess']
     output_dir = '/p/vast1/karande1/heavyIon/data/preprocessed_data/infer/tracks/' + save_dir.split('track_')[-1]
-    already_preprocessed = data_config['already_preprocessed']
+    already_preprocessed = False # data_config['already_preprocessed']
 
     concat_input = model_config['concat_input']
 
@@ -64,7 +64,7 @@ if __name__=="__main__":
     logging.info('Using config file from {}'.format(args.save_dir)) 
 
     pion_files = np.sort(glob.glob(data_dir+'/*npy'))
-    val_start = 250
+    val_start = 400
     pion_val_files = pion_files[val_start:]
 
     val_output_dir = None
@@ -216,10 +216,23 @@ if __name__=="__main__":
                   format(i, 
                          np.mean(val_loss), 
                          end-start))
+            print('Iter: {:04d}, Val_loss_mean: {:.4f}, Took {:.3f}secs'. \
+                  format(i, 
+                         np.mean(val_loss), 
+                         end-start))
             start = time.time()
         
         i += 1
 
+    end = time.time()
+    logging.info('Iter: {:04d}, Val_loss_mean: {:.4f}, Took {:.3f}secs'. \
+          format(i, 
+                 np.mean(val_loss), 
+                 end-start))
+    print('Iter: {:04d}, Val_loss_mean: {:.4f}, Took {:.3f}secs'. \
+          format(i, 
+                 np.mean(val_loss), 
+                 end-start))
     all_targets = np.concatenate(all_targets)
     all_outputs = np.concatenate(all_outputs)
     

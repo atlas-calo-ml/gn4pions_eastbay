@@ -263,6 +263,12 @@ if __name__=="__main__":
             
             i += 1 
 
+        end = time.time()
+        logging.info('Iter: {:04d}, Tr_loss_mean: {:.6f}, Took {:.3f}secs'. \
+              format(i, 
+                     np.mean(training_loss), 
+                     end-start))
+
         training_loss_epoch.append(training_loss)
         training_end = time.time()
 
@@ -306,6 +312,13 @@ if __name__=="__main__":
                 start = time.time()
             
             i += 1
+
+        end = time.time()
+        logging.info('Iter: {:04d}, Val_loss_mean: {:.6f}, Took {:.3f}secs'. \
+              format(i, 
+                     np.mean(val_loss), 
+                     end-start))
+        start = time.time()
 
         epoch_end = time.time()
 

@@ -62,7 +62,7 @@ if __name__=="__main__":
     num_procs = data_config['num_procs']
     preprocess = data_config['preprocess']
     output_dir = data_config['output_dir']
-    already_preprocessed = data_config['already_preprocessed']
+    already_preprocessed = True if restart else data_config['already_preprocessed']
 
     concat_input = model_config['concat_input']
 
