@@ -14,6 +14,7 @@ from scipy.stats import circmean
 import random
 import itertools
 import tensorflow as tf
+import awkward as ak
 
 import matplotlib.pyplot as plt # optional
 plt.rcParams.update({
@@ -91,7 +92,7 @@ class GraphDataGenerator:
                  cellGeo_file: str,
                  batch_size: int,
                  shuffle: bool = True,
-                 num_procs = 32,
+                 num_procs = 1,
                  preprocess = False,
                  output_dir = None):
         """Initialization"""
@@ -133,12 +134,11 @@ class GraphDataGenerator:
 
     def get_cluster_calib(self, event_data, event_ind, cluster_ind):
         """ Reading cluster calibration energy """
-        cluster_calib_E = event_data['cluster_ENG_CALIB_TOT'][event_ind][cluster_ind]
-
-        if cluster_calib_E <= 0:
+        cluster_calib_E = event_data['cluster_ENG_CALIB_TOT'][event_ind][cluster_ind] 
+        try:
+            return np.log10(cluster_calib_E)
+        except:
             return None
-
-        return np.log10(cluster_calib_E)
 
     def get_cluster_eta(self, event_data, event_ind, cluster_ind):
         """ Reading cluster eta """
@@ -255,12 +255,18 @@ class GraphDataGenerator:
 
             ### Pions
             file = self.pion_file_list[file_num]
+            print(file)
             event_data = np.load(file, allow_pickle=True).item()
             num_events = len(event_data[[key for key in event_data.keys()][0]])
 
             preprocessed_data = []
 
+            preprocessed_data = []
+            preprocessed_data = []
+            print("num_events:", num_events)
+            passed=  0
             for event_ind in range(num_events):
+                # print(event_ind)
                 # print("=======EVENT=========")
                 num_clusters = event_data['nCluster'][event_ind]
                 # print("This event has {} clusters.".format(num_clusters))
@@ -274,6 +280,7 @@ class GraphDataGenerator:
                 # print("Cluster energies...", event_data['cluster_E'][event_ind])
                 # print("Sum of cluster energies = {}".format(sum_cluster_E))
                 # print("Sum of calibrated energies = {}".format(sum_lcw_E))
+                # print(num_clusters)
                 for i in range(num_clusters):
 #                     if event_data['dR_pass'][event_ind][i] == False:
 #                         continue
@@ -321,38 +328,40 @@ class GraphDataGenerator:
                                                         cluster_E_9_scaled = (cluster_E_9 - scales['cluster_e_mean'])/scales['cluster_e_std']
 
                     cluster_HAD_WEIGHT = event_data['cluster_HAD_WEIGHT'][event_ind][i]
-
+                    
                     if cluster_calib_E is None:
                         continue
-
+                    
+                    passed= passed +1
                     cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
 
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
+                    # print("NODES")
                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
 
 #                 # track section ----------------------------------------------------------------
 #                     track_nodes = np.empty((0, 11))
-                    num_tracks = event_data['nTrack'][event_ind]
-                    if num_tracks > 0:
-                        for track_index in range(num_tracks):
-    #                         np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
-                            track_pt = np.log10(event_data["trackPt"][event_ind][track_index])
-                            track_z0 = event_data["trackZ0"][event_ind][track_index]
-                            track_eta = event_data["trackEta"][event_ind][track_index]
-                            track_phi = event_data["trackPhi"][event_ind][track_index]
+    #                 num_tracks = event_data['nTrack'][event_ind]
+    #                 if num_tracks > 0:
+    #                     for track_index in range(num_tracks):
+    # #                         np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
+    #                         track_pt = np.log10(event_data["trackPt"][event_ind][track_index])
+    #                         track_z0 = event_data["trackZ0"][event_ind][track_index]
+    #                         track_eta = event_data["trackEta"][event_ind][track_index]
+    #                         track_phi = event_data["trackPhi"][event_ind][track_index]
 
-                        track_pt_scaled = (track_pt - scales['track_pt_mean'])/scales['track_pt_std']
-                        track_z0_scaled = (track_z0 - scales['track_z0_mean'])/scales['track_z0_std']
-                        track_eta_scaled = (track_eta - scales['track_eta_mean'])/scales['track_eta_std']
-                        track_phi_scaled = (track_phi - scales['track_phi_mean'])/scales['track_phi_std']
+    #                     track_pt_scaled = (track_pt - scales['track_pt_mean'])/scales['track_pt_std']
+    #                     track_z0_scaled = (track_z0 - scales['track_z0_mean'])/scales['track_z0_std']
+    #                     track_eta_scaled = (track_eta - scales['track_eta_mean'])/scales['track_eta_std']
+    #                     track_phi_scaled = (track_phi - scales['track_phi_mean'])/scales['track_phi_std']
 
-                    else:
-                        track_pt = np.array(0)
-                        track_eta = np.array(0)
-                        track_pt_scaled = np.array(0)
-                        track_z0_scaled = np.array(0)
-                        track_eta_scaled = np.array(0)
-                        track_phi_scaled = np.array(0)
+    #                 else:
+    #                     track_pt = np.array(0)
+    #                     track_eta = np.array(0)
+    #                     track_pt_scaled = np.array(0)
+    #                     track_z0_scaled = np.array(0)
+    #                     track_eta_scaled = np.array(0)
+    #                     track_phi_scaled = np.array(0)
 
 #                     track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
 
@@ -375,10 +384,10 @@ class GraphDataGenerator:
                                              cluster_E_7_scaled.astype(np.float32),
                                              cluster_E_8_scaled.astype(np.float32),
                                              cluster_E_9_scaled.astype(np.float32),
-                                             track_pt_scaled.astype(np.float32),
-                                             track_z0_scaled.astype(np.float32),
-                                             track_eta_scaled.astype(np.float32),
-                                             track_phi_scaled.astype(np.float32),
+                                            #  track_pt_scaled.astype(np.float32),
+                                            #  track_z0_scaled.astype(np.float32),
+                                            #  track_eta_scaled.astype(np.float32),
+                                            #  track_phi_scaled.astype(np.float32),
                                              ])
 
                     graph = {'nodes': nodes.astype(np.float32),
@@ -390,67 +399,135 @@ class GraphDataGenerator:
                             'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
                             'cluster_E_0': cluster_E_0.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32),
                             'truthPartPt': truthPartPt.astype(np.float32), 'truthPartE': truth_particle_E.astype(np.float32),
-                             'track_pt': track_pt.astype(np.float32), 'track_eta': track_eta.astype(np.float32),
+                            #  'track_pt': track_pt.astype(np.float32), 'track_eta': track_eta.astype(np.float32),
                             'sum_cluster_E': sum_cluster_E.astype(np.float32), 'sum_lcw_E': sum_lcw_E.astype(np.float32)}
+                    # print(graph)
+                    # print("nodes: ", nodes)
                     target = np.reshape([truth_particle_E_scaled.astype(np.float32), 1], [1,2])
                     preprocessed_data.append((graph, target))
-
-#             ### Pi0
-#             file = self.pi0_file_list[file_num]
-#             event_data = np.load(file, allow_pickle=True).item()
-#             num_events = len(event_data[[key for key in event_data.keys()][0]])
-
-#             for event_ind in range(num_events):
-#                 num_clusters = event_data['nCluster'][event_ind]
-#                 truth_particle_E = np.log10(event_data['truthPartE'][event_ind][0]) # first one is the pion!
-#                 truthPartPt = event_data['truthPartPt'][event_ind][0]
-
-#                 for i in range(num_clusters):
-#                     cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
-#                     cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][i]
-#                     cluster_E = np.log10(event_data['cluster_E'][event_ind][i])
-#                     cluster_HAD_WEIGHT = event_data['cluster_HAD_WEIGHT'][event_ind][i]
-
+                # print("DONE")
+                
+                
+            print("passed class0: " , passed)
+            ### Pions
+            file = self.pi0_file_list[file_num]
+            print(file)
+            event_data = np.load(file, allow_pickle=True).item()
+            num_events = len(event_data[[key for key in event_data.keys()][0]])
+            print("num_events:", num_events)
+            passed_class1 = 0
+            for event_ind in range(num_events):
+                # print(event_ind)
+                # print("=======EVENT=========")
+                num_clusters = event_data['nCluster'][event_ind]
+                # print("This event has {} clusters.".format(num_clusters))
+                truth_particle_E = np.log10(event_data['truthPartE'][event_ind][0])
+                # print("Target particle E =", event_data['truthPartE'][event_ind][0])
+                truth_particle_E_scaled = (truth_particle_E - scales['truth_part_e_mean'])/scales['truth_part_e_std']
+                truthPartPt = event_data['truthPartPt'][event_ind][0]
+                sum_cluster_E = np.sum(event_data['cluster_E'][event_ind]) # sum of all cluster energies in the event
+                # sum_lcw_E = np.sum(event_data['cluster_E'][event_ind]*event_data['cluster_HAD_WEIGHT'][event_ind])
+                sum_lcw_E = np.sum(event_data['cluster_E_LCCalib'][event_ind])
+                # print("Cluster energies...", event_data['cluster_E'][event_ind])
+                # print("Sum of cluster energies = {}".format(sum_cluster_E))
+                # print("Sum of calibrated energies = {}".format(sum_lcw_E))
+                # print(num_clusters)
+                for i in range(num_clusters):
 #                     if event_data['dR_pass'][event_ind][i] == False:
 #                         continue
+                    cluster_calib_E = self.get_cluster_calib(event_data, event_ind, i)
+                    cluster_EM_prob = event_data['cluster_EM_PROBABILITY'][event_ind][i]
+                    cluster_E_0 = np.log10(event_data['cluster_E'][event_ind][0])
+                    cluster_E_0_scaled = (cluster_E_0 - scales['cluster_e_mean'])/scales['cluster_e_std']
 
-#                     if cluster_calib_E is None:
-#                         continue
+                    cluster_E_1_scaled = np.array(0)
+                    cluster_E_2_scaled = np.array(0)
+                    cluster_E_3_scaled = np.array(0)
+                    cluster_E_4_scaled = np.array(0)
+                    cluster_E_5_scaled = np.array(0)
+                    cluster_E_6_scaled = np.array(0)
+                    cluster_E_7_scaled = np.array(0)
+                    cluster_E_8_scaled = np.array(0)
+                    cluster_E_9_scaled = np.array(0)
 
-#                     cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
+                    if num_clusters > 1:
+                        cluster_E_1 = np.log10(event_data['cluster_E'][event_ind][1])
+                        cluster_E_1_scaled = (cluster_E_1 - scales['cluster_e_mean'])/scales['cluster_e_std']
+                        if num_clusters > 2:
+                            cluster_E_2 = np.log10(event_data['cluster_E'][event_ind][2])
+                            cluster_E_2_scaled = (cluster_E_2 - scales['cluster_e_mean'])/scales['cluster_e_std']
+                            if num_clusters > 3:
+                                cluster_E_3 = np.log10(event_data['cluster_E'][event_ind][3])
+                                cluster_E_3_scaled = (cluster_E_3 - scales['cluster_e_mean'])/scales['cluster_e_std']
+                                if num_clusters > 4:
+                                    cluster_E_4 = np.log10(event_data['cluster_E'][event_ind][4])
+                                    cluster_E_4_scaled = (cluster_E_4 - scales['cluster_e_mean'])/scales['cluster_e_std']
+                                    if num_clusters > 5:
+                                        cluster_E_5 = np.log10(event_data['cluster_E'][event_ind][5])
+                                        cluster_E_5_scaled = (cluster_E_5 - scales['cluster_e_mean'])/scales['cluster_e_std']
+                                        if num_clusters > 6:
+                                            cluster_E_6 = np.log10(event_data['cluster_E'][event_ind][6])
+                                            cluster_E_6_scaled = (cluster_E_6 - scales['cluster_e_mean'])/scales['cluster_e_std']
+                                            if num_clusters > 7:
+                                                cluster_E_7 = np.log10(event_data['cluster_E'][event_ind][7])
+                                                cluster_E_7_scaled = (cluster_E_7 - scales['cluster_e_mean'])/scales['cluster_e_std']
+                                                if num_clusters > 8:
+                                                    cluster_E_8 = np.log10(event_data['cluster_E'][event_ind][8])
+                                                    cluster_E_8_scaled = (cluster_E_8 - scales['cluster_e_mean'])/scales['cluster_e_std']
+                                                    if num_clusters > 9:
+                                                        cluster_E_9 = np.log10(event_data['cluster_E'][event_ind][9])
+                                                        cluster_E_9_scaled = (cluster_E_9 - scales['cluster_e_mean'])/scales['cluster_e_std']
 
-#                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
-#                     senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
+                    cluster_HAD_WEIGHT = event_data['cluster_HAD_WEIGHT'][event_ind][i]
+                    
+                    if cluster_calib_E is None:
+                        continue
+                    passed_class1 = passed_class1 +1
+                    cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
 
-#                     # track section ----------------------------------------------------------------
-#                     track_nodes = np.empty((0, 11))
-#                     num_tracks = event_data['nTrack'][event_ind]
-#                     for track_index in range(num_tracks):
-#                         np.append(track_nodes, self.get_track_node(event_data, event_ind, track_index).reshape(1, -1), axis=0)
-#                         track_pt = np.array([np.log10(event_data["trackPt"][event_ind][track_index])])
+                    nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)
+                    # print("NODES")
+                    senders, receivers, edges = self.get_edges(cluster_num_nodes, cell_IDmap)
 
-#                     track_senders, track_receivers, track_edge_features = self.get_track_edges(len(track_nodes), cluster_num_nodes)
+                    globals_list = np.array([
+                                             cluster_E_0_scaled.astype(np.float32),
+                                             cluster_E_1_scaled.astype(np.float32),
+                                             cluster_E_2_scaled.astype(np.float32),
+                                             cluster_E_3_scaled.astype(np.float32),
+                                             cluster_E_4_scaled.astype(np.float32),
+                                             cluster_E_5_scaled.astype(np.float32),
+                                             cluster_E_6_scaled.astype(np.float32),
+                                             cluster_E_7_scaled.astype(np.float32),
+                                             cluster_E_8_scaled.astype(np.float32),
+                                             cluster_E_9_scaled.astype(np.float32),
+                                            #  track_pt_scaled.astype(np.float32),
+                                            #  track_z0_scaled.astype(np.float32),
+                                            #  track_eta_scaled.astype(np.float32),
+                                            #  track_phi_scaled.astype(np.float32),
+                                             ])
 
-#                     nodes = np.append(nodes, np.array(track_nodes), axis=0)
-#                     edges = np.append(edges, track_edge_features, axis=0)
-#                     senders = np.append(senders, track_senders, axis=0)
-#                     receivers = np.append(receivers, track_receivers, axis=0)
-
-#                     # end track section ----------------------------------------------------------------
-
-#                     graph = {'nodes': nodes.astype(np.float32),
-# #                              'globals': global_node.astype(np.float32),
-#                              'globals': track_pt.astype(np.float32),
-#                         'senders': senders.astype(np.int32), 'receivers': receivers.astype(np.int32),
-#                         'edges': edges.astype(np.float32), 'cluster_calib_E': cluster_calib_E.astype(np.float32),
-#                         'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
-#                         'cluster_E': cluster_E.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32),
-#                         'truthPartPt': truthPartPt.astype(np.float32), 'track_pt': track_pt.astype(np.float32)}
-#                     target = np.reshape([truth_particle_E.astype(np.float32), 0], [1,2])
-
-#                     preprocessed_data.append((graph, target))
+                    graph = {'nodes': nodes.astype(np.float32),
+                            'globals': globals_list,
+                            'senders': senders.astype(np.int32),
+                            'receivers': receivers.astype(np.int32),
+                            'edges': edges.astype(np.float32),
+                            'cluster_calib_E': cluster_calib_E.astype(np.float32),
+                            'cluster_eta': cluster_eta.astype(np.float32), 'cluster_EM_prob': cluster_EM_prob.astype(np.float32),
+                            'cluster_E_0': cluster_E_0.astype(np.float32), 'cluster_HAD_WEIGHT': cluster_HAD_WEIGHT.astype(np.float32),
+                            'truthPartPt': truthPartPt.astype(np.float32), 'truthPartE': truth_particle_E.astype(np.float32),
+                            #  'track_pt': track_pt.astype(np.float32), 'track_eta': track_eta.astype(np.float32),
+                            'sum_cluster_E': sum_cluster_E.astype(np.float32), 'sum_lcw_E': sum_lcw_E.astype(np.float32)}
+                    # print(graph)
+                    # print("nodes: ", nodes)
+                    target = np.reshape([truth_particle_E_scaled.astype(np.float32), 0], [1,2])
+                    preprocessed_data.append((graph, target))
+                # print("DONE")
 
             random.shuffle(preprocessed_data)
+            # print(preprocessed_data)
+
+            print("passed class0: " , passed)
+            print("passed class1: " , passed_class1)
 
             pickle.dump(preprocessed_data, open(self.output_dir + f'data_{file_num:03d}.p', 'wb'), compression='gzip')
 
@@ -460,15 +537,39 @@ class GraphDataGenerator:
     def preprocess_data(self):
         print('\nPreprocessing and saving data to {}'.format(self.output_dir))
         for i in range(self.num_procs):
-            p = Process(target=self.preprocessor, args=(i,), daemon=True)
+            p = Process(target=self.preprocessor, args=(i,))
             p.start()
+            p.join()
             self.procs.append(p)
 
-        for p in self.procs:
-            p.join()
-
+        # for p in self.procs:
+            if p.is_alive():
+                print("Process is still running.")
         self.file_list = [self.output_dir + f'data_{i:03d}.p' for i in range(self.num_files)]
 
+    # def preprocess_data(self):
+    #     print('\nPreprocessing and saving data to {}'.format(self.output_dir))
+    #     for i in range(self.num_procs):
+    #         print("test")
+    #         # Directly call the preprocessor function with the current index
+    #         self.preprocessor(i)
+            
+    #         self.file_list = [self.output_dir + f'data_{i:03d}.p' for i in range(self.num_files)]
+
+        
+        
+    # def preprocess_data(self):
+    #     print('\nPreprocessing and saving data to {}'.format(self.output_dir))
+    #     for i in range(self.num_procs):
+    #         print("test")
+    #         p = Process(target=self.preprocessor, args=(i,), daemon=True)
+    #         p.start()
+    #         self.procs.append(p)
+        
+    #     for p in self.procs:
+    #         p.join()
+
+    #     self.file_list = [self.output_dir + f'data_{i:03d}.p' for i in range(self.num_files)]
     def preprocessed_worker(self, worker_id, batch_queue):
         batch_graphs = []
         batch_targets = []
@@ -476,11 +577,10 @@ class GraphDataGenerator:
         file_num = worker_id
         while file_num < self.num_files:
             file_data = pickle.load(open(self.file_list[file_num], 'rb'), compression='gzip')
-
             for i in range(len(file_data)):
                 batch_graphs.append(file_data[i][0])
                 batch_targets.append(file_data[i][1])
-
+                # print(batch_graphs)
                 if len(batch_graphs) == self.batch_size:
                     batch_targets = np.reshape(np.array(batch_targets), [-1,2]).astype(np.float32)
 
@@ -497,6 +597,7 @@ class GraphDataGenerator:
 
     def worker(self, worker_id, batch_queue):
         if self.preprocess:
+            # print("found")
             self.preprocessed_worker(worker_id, batch_queue)
         else:
             raise Exception('Preprocessing is required for combined classification/regression models.')
@@ -517,20 +618,64 @@ class GraphDataGenerator:
         """
         Generator that returns processed batches during training
         """
+        # print("yo")
+        # print(self.num_procs)
         batch_queue = Queue(2 * self.num_procs)
+        # print("yo2")
+        # batch = batch_queue.get(True, 0.0001)
+
 
         for i in range(self.num_procs):
             p = Process(target=self.worker, args=(i, batch_queue), daemon=True)
             p.start()
             self.procs.append(p)
-
+        
         while self.check_procs() or not batch_queue.empty():
             try:
+                # print("done")
                 batch = batch_queue.get(True, 0.0001)
+                # print("batch:")
+                # print(batch)
+                # print("end bact")
             except:
+                # print("contninued")
+                # print(self.check_procs())
+                # # print(batch_queue.empty())
                 continue
 
             yield batch
 
         for p in self.procs:
             p.join()
+        
+
+
+# def convert_root_to_npy(root_file_path, output_npy_path, tree_name, branch_name):
+#     """
+#     Convert a specified branch of a ROOT file to a NPY file.
+
+#     Parameters:
+#     - root_file_path: str, the path to the input ROOT file.
+#     - output_npy_path: str, the path where the output NPY file will be saved.
+#     - tree_name: str, the name of the tree in the ROOT file.
+#     - branch_name: str, the name of the branch to be converted.
+
+#     Returns:
+#     None
+#     """
+#     # Open the ROOT file
+#     with uproot.open(root_file_path) as file:
+#         # Access the tree
+#         tree = file[tree_name]
+#         # Access the branch data as a NumPy array
+#         branch_data = tree[branch_name].array(library="np")
+#         # Save the array to a .npy file
+#         np.save(output_npy_path, branch_data)
+
+# # Example usage
+# root_file_path = 'path/to/your/file.root'  # Update this to your ROOT file's path
+# output_npy_path = 'path/to/your/output_file.npy'  # Update this to your desired output path
+# tree_name = 'your_tree_name'  # Update this with the name of your tree
+# branch_name = 'your_branch_name'  # Update this with the branch you want to convert
+
+# convert_root_to_npy(root_file_path, output_npy_path, tree_name, branch_name)

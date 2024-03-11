@@ -132,6 +132,9 @@ def roc_plot(xlist, ylist, figfile = '',
         label = None
         if len(labels) > 0:
             label = labels[i]
+        # print(x)
+        print("y")
+        print(y)
         plt.plot(x, y, label = label, linestyle=linestyle, color=color)
         
     if x_log:

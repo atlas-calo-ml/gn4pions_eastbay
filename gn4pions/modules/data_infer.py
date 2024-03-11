@@ -135,12 +135,18 @@ class MPGraphDataGenerator:
             f_name = self.pion_file_list[file_num]
             event_tree = ur.open(f_name)['EventTree']
             num_events = event_tree.num_entries
-
-            event_data = event_tree.arrays(library='np')
+            print(num_events)
+            print(f_name)
+            print(f"Proceesing file number {file_num}")
+            # print(event_tree.keys())
+            print("hi")
+            event_data = event_tree.AsArray(library='np',entry_stop=5000)
+            print(f"YO {file_num}")
 
             preprocessed_data = []
 
             for event_ind in range(num_events):
+                print(event_ind)
                 num_clusters = event_data['nCluster'][event_ind]
                 
                 for i in range(num_clusters):
@@ -163,6 +169,8 @@ class MPGraphDataGenerator:
 
                     preprocessed_data.append((graph, target, meta_data))
 
+
+            print(f"Proccesing file number {file_num}")
             f_name = self.pi0_file_list[file_num]
             event_tree = ur.open(f_name)['EventTree']
             num_events = event_tree.num_entries
@@ -199,17 +207,30 @@ class MPGraphDataGenerator:
             file_num += self.num_procs
             print(f"Finished processing {file_num} files")
 
+
     def preprocess_data(self):
         print('\nPreprocessing and saving data to {}'.format(self.output_dir))
         for i in range(self.num_procs):
-            p = Process(target=self.preprocessor, args=(i,), daemon=True)
-            p.start()
-            self.procs.append(p)
-        
-        for p in self.procs:
-            p.join()
+            print("test")
+            # Directly call the preprocessor function with the current index
+            self.preprocessor(i)
+            
+            self.file_list = [self.output_dir + f'data_{i:03d}.p' for i in range(self.num_files)]
 
-        self.file_list = [self.output_dir + f'data_{i:03d}.p' for i in range(self.num_files)]
+        
+        
+    # def preprocess_data(self):
+    #     print('\nPreprocessing and saving data to {}'.format(self.output_dir))
+    #     for i in range(self.num_procs):
+    #         print("test")
+    #         p = Process(target=self.preprocessor, args=(i,), daemon=True)
+    #         p.start()
+    #         self.procs.append(p)
+        
+    #     for p in self.procs:
+    #         p.join()
+
+    #     self.file_list = [self.output_dir + f'data_{i:03d}.p' for i in range(self.num_files)]
 
     def preprocessed_worker(self, worker_id, batch_queue):
         batch_graphs = []
@@ -281,12 +302,32 @@ class MPGraphDataGenerator:
             
         
 if __name__ == '__main__':
-    data_dir = '/usr/workspace/pierfied/preprocessed/data/'
-    out_dir = '/usr/workspace/pierfied/preprocessed/preprocessed_data/'
-    pion_files = np.sort(glob.glob(data_dir+'user*.root'))
+    # data_dir = '/usr/workspace/pierfied/preprocessed/data/'
+    # out_dir = '/usr/workspace/pierfied/preprocessed/preprocessed_data/'
+    cell_geo_loc = '/hpcfs/users/a1768536/AGPF/gnn4pions/ML_TREE_DATA/cell_geo.root'
+    pi0_loc = '/hpcfs/users/a1768536/AGPF/gnn4pions/ML_TREE_DATA/pi0/user.mjgreen/'
+    piplus_loc = '/hpcfs/users/a1768536/AGPF/gnn4pions/ML_TREE_DATA//n0/user.mjgreen/'
+    out_dir = '/hpcfs/users/a1768536/AGPF/gnn4pions/ML_TREE_DATA/processed_data/'
     
-    data_gen = MPGraphDataGenerator(file_list=pion_files, 
-                                  cellGeo_file=data_dir+'cell_geo.root',
+    # f_name = '/home/a1768536/gn4pions_eastbay/ML_TREE_DATA/n0/user.mjgreen/user.mjgreen._piplus_02.mltree.root'
+    # event_tree = ur.open(f_name)['EventTree']
+    # num_events = event_tree.num_entries
+    # print(num_events)
+    # print(f_name)
+    # # print(f"Proceesing file number {file_num}")
+    # print(event_tree.keys())
+    # event_data = event_tree.arrays(library='np',entry_stop=2)
+    print(f"YOs")
+
+
+    
+    pi0_files = np.sort(glob.glob(pi0_loc+'user*.root'))
+    piplus_files = np.sort(glob.glob(piplus_loc+'user*.root'))
+    
+    data_gen = MPGraphDataGenerator(
+                                  pi0_file_list=pi0_files, 
+                                  pion_file_list= piplus_files,
+                                  cellGeo_file=cell_geo_loc,
                                   batch_size=32,
                                   shuffle=False,
                                   num_procs=32,

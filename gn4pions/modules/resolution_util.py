@@ -83,7 +83,7 @@ def resolutionPlot(x, y, figfile='', statistic='std',
     plt.plot(xcenter, resolution)
     plt.xscale('log')
     plt.xlim(0.1, 1000)
-    plt.ylim(0,0.1)
+    plt.ylim(0,1)
     pu.ampl.set_xlabel(xlabel, fontsize=20)
     pu.ampl.set_ylabel(ylabel, fontsize=20)
 
