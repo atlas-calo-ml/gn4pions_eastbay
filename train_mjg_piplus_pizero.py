@@ -29,8 +29,6 @@ from gn4pions.modules.models import MultiOutWeightedRegressModel, MultiOutBlockM
 from gn4pions.modules.utils import convert_to_tuple
 
 sns.set_context('poster')
-# print(os.environ['CUDA_VISIBLE_DEVICES'])
-# os.environ['CUDA_VISIBLE_DEVICES'] ="0"
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("config", default=None, type=str, help="Specify training config file.")
@@ -123,9 +121,6 @@ if __name__ == "__main__":
 # /hpcfs/users/a1768536/AGPF/gnn4pions/ML_TREE_DATA/pi0/user.mjgreen/user.mjgreen._pi0_01.mltree.root
     # Training Data Generator
     # Will preprocess data if it doesnt find pickled files
-    print(".pkl")
-    print(pi0_files)
-    print(piplus_files)
     data_gen_train = GraphDataGenerator(pi0_file_list=pi0_train_files,
                                         pion_file_list=pion_train_files,
                                         cellGeo_file=cell_geo_file,
@@ -148,10 +143,7 @@ if __name__ == "__main__":
 
     #Get batch of data
     def get_batch(data_iter):
-        print(data_iter)
         for graphs, targets in data_iter:
-            # print(graphs)
-            # print(targets)
             targets = tf.convert_to_tensor(targets)
             graphs, energies, etas, em_probs, cluster_calib_es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas, sum_cluster_es, sum_lcw_es = convert_to_tuple(graphs)
             yield graphs, targets, energies, etas , em_probs, cluster_calib_es, cluster_had_weights, truth_particle_es, truth_particle_pts, track_pts, track_etas, sum_cluster_es, sum_lcw_es
@@ -167,9 +159,7 @@ if __name__ == "__main__":
 
 
     # Get a sample graph for tf.function decorator
-    print("hi")
     samp_graph, samp_target, samp_e, samp_eta, _, _, _, _, _, _, _, _, _ = next(get_batch(data_gen_train.generator()))
-    print("hi")
     data_gen_train.kill_procs()
     graph_spec = utils_tf.specs_from_graphs_tuple(samp_graph, True, True, True)
 
@@ -326,34 +316,6 @@ if __name__ == "__main__":
                 print(f'Val_loss_cl_mean: {np.mean(val_loss_class):.4f}, ', end='') 
                 print(f'Took {end-start:.4f}secs')
                 start = time.time()
-
-        # fpr, tpr, thresholds = roc_curve(targets_val[:,1], output_vals[:,1])
-
-        # Plotting the ROC curve
-        # plt.figure(figsize=(8, 6))
-        # plt.plot(fpr, tpr, color='blue')
-        # plt.plot([0, 1], [0, 1])
-        # # plt.xlabel('False Positive Rate')
-        # plt.ylabel('True Positive Rate')
-        # plt.title('ROC Curve')
-        # plt.legend()
-        # plt.grid(True)
-        # full_path ="roc.pdf"
-        # print(save_dir)
-        # plt.savefig(full_path)
-        # fpr_filename = f"/fpr_epoch_{e}.txt"
-        # tpr_filename = f"/tpr_epoch_{e}.txt"
-        # auc_filename = f"/auc_epoch_{e}.txt"
-
-        # # Save FPR and TPR to their respective files
-        # np.savetxt(save_dir+ fpr_filename, fpr)
-        # np.savetxt(save_dir + tpr_filename, tpr)
-        # with open(save_dir +auc_filename, 'w') as f:
-        #     f.write(str(auc_score))
-
-        # print(f"Saved FPR and TPR for epoch {e} to {save_dir + fpr_filename} and {save_dir + tpr_filename}")
-
-
 
         epoch_end = time.time()
 
