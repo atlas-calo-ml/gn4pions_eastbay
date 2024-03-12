@@ -23,8 +23,8 @@ model:
   reducer: mean
 training: 
   alpha: 0.5
-  epochs: 10
+  epochs: 25
   gpu: 1
   learning_rate: 0.001
   log_freq: 100
-  save_dir: results/n0_pi0_checkStopIter_v01/ 
+  save_dir: results/n0_pi0_03_12_24_v01/ 

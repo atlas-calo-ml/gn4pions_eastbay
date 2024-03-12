@@ -2,15 +2,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
+from sklearn.metrics import confusion_matrix
 
 from gn4pions.modules.resolution_util import responsePlot,resolutionPlot
 from gn4pions.modules.plot_util import roc_plot
 
+import itertools
 
 
 def plot_roc_curve(save_path):
     # Define the file paths
-    # save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/onetrack_multicluster/test_mjg_piplus_pizero_20240308_regress"
     file_path = save_path+'/predictions.npz'
     
     # Load the data from the .npz file
@@ -19,27 +20,16 @@ def plot_roc_curve(save_path):
     # Extract the targets and outputs vectors
     targets = data['targets']
     outputs = data['outputs']
-    targets = data['targets']
-    outputs = data['outputs']
-
-    print(targets)
-    print(len(targets[:,1]))
-
-
+    
     auc_score = roc_auc_score(targets[:,1], outputs[:,1])
-    print(auc_score)
-    fpr, tpr, thresholds = roc_curve(targets[:,1], outputs[:,1])
-
-    # Load the FPR, TPR, and AUC values from files
-    # fpr = np.loadtxt(save_path + fpr_file)
-    # tpr = np.loadtxt(save_path + tpr_file)
-    # with open(save_path +auc_file, 'r') as f:
-    #     auc_score = float(f.read())
+    fpr, tpr, _ = roc_curve(targets[:,1], outputs[:,1])
     
     # Plotting the ROC curve
     plt.figure(figsize=(8, 6))
     plt.plot(fpr, tpr, color='blue', label=f'AUC = {auc_score:.5f}')
     plt.plot([0, 1], [0, 1], color='red', linestyle='--', label='Random classifier')
+    plt.ylim(0,1.1)
+    plt.xlim(0,1.1)
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.title(f'ROC Curve for pi0/piplus')
@@ -47,10 +37,10 @@ def plot_roc_curve(save_path):
     plt.grid(True)
     plt.savefig(save_path + "_roc_curve.pdf")
 
+
+
 def plot_regression(save_path):
     # Define the file paths
-    # save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/n0_pi0_v04/test_mjg_n0_pi0_20240308_regress"
-    # save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/onetrack_multicluster/test_mjg_piplus_pizero_20240308_regress"
     file_path = save_path+'/predictions.npz'
     
     # Load the data from the .npz file
@@ -61,17 +51,6 @@ def plot_regression(save_path):
     outputs = data['outputs'][:,0]
     print(np.mean(outputs))
 
-    
-
-
-    # print(auc_score)
-    # fpr, tpr, thresholds = roc_curve(targets[:,1], outputs[:,1])
-
-    # Load the FPR, TPR, and AUC values from files
-    # fpr = np.loadtxt(save_path + fpr_file)
-    # tpr = np.loadtxt(save_path + tpr_file)
-    # with open(save_path +auc_file, 'r') as f:
-    #     auc_score = float(f.read())
     
     # Plotting the ROC curve
     plt.figure(figsize=(8, 6))
@@ -88,7 +67,6 @@ def plot_regression(save_path):
 
 def plot_class(save_path):
     # Define the file paths
-    # save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/onetrack_multicluster/test_mjg_piplus_pizero_20240308_regress"
     file_path = save_path+'/predictions.npz'
     
     # Load the data from the .npz file
@@ -97,18 +75,6 @@ def plot_class(save_path):
     # Extract the targets and outputs vectors
     targets = data['targets'][:,1]
     outputs = data['outputs'][:,1]
-    
-    print(np.mean(outputs))
-
-
-    # print(auc_score)
-    # fpr, tpr, thresholds = roc_curve(targets[:,1], outputs[:,1])
-
-    # Load the FPR, TPR, and AUC values from files
-    # fpr = np.loadtxt(save_path + fpr_file)
-    # tpr = np.loadtxt(save_path + tpr_file)
-    # with open(save_path +auc_file, 'r') as f:
-    #     auc_score = float(f.read())
     
     # Plotting the ROC curve
     plt.figure(figsize=(8, 6))
@@ -122,13 +88,91 @@ def plot_class(save_path):
     # plt.grid(True)
     plt.savefig(save_path + "_class.pdf")
 
-# Example: Plot ROC curve for epoch 1
+def plot_cm(save_path,class_0_label,class_1_label):
+    # Define the file paths
+    file_path = save_path + '/predictions.npz'
+    
+    # Load the data from the .npz file
+    data = np.load(file_path)
+    
+    # Extract the targets and outputs vectors
+    targets = data['targets']
+    outputs = data['outputs']
+    
+    # Assuming outputs are probabilities and we classify as 1 if probability > 0.5
+    predicted_labels = np.argmax(outputs, axis=1)
+    true_labels = np.argmax(targets, axis=1)
+    
+    # Calculate the confusion matrix
+    cm = confusion_matrix(true_labels, predicted_labels)
+    
+    # Normalize the confusion matrix by row (i.e., by the number of samples in each true class)
+    cm_percentage = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis] * 100
+    
+    # Plotting the confusion matrix
+    plt.figure(figsize=(8, 6))
+    plt.imshow(cm_percentage, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.title('Confusion Matrix (Percentage by True Label)')
+    plt.colorbar(format='%0.2f%%')
+    tick_marks = np.arange(2)
+    plt.xticks(tick_marks, [class_0_label, class_1_label], rotation=45)
+    plt.yticks(tick_marks, [class_0_label, class_1_label])
+    
+    # Labeling the plot
+    thresh = cm_percentage.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, f"{cm_percentage[i, j]:.2f}%",
+                 horizontalalignment="center",
+                 color="white" if cm_percentage[i, j] > thresh else "black")
+    
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    
+    # Save the plot
+    plt.savefig(save_path + "_confusion_matrix.pdf")
 
-save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/n0_pi0_v05/test_mjg_n0_pi0_20240308_regress/"
 
-# plot_roc_curve(save_path)
-# plot_regression(save_path)
-# plot_class(save_path)
+def plot_response_perClass(save_path,class_0_label,class_1_label):
+    # Define the file paths
+    
+    file_path = save_path + '/predictions.npz'
+    
+    
+    # Load the data from the .npz file
+    data = np.load(file_path)
+    
+    # Extract the targets and outputs vectors
+    targets = data['targets'][:,0]
+    outputs = data['outputs'][:,0]
+    
+    truth_labels = data['targets'][:,1]
+    
+    print(truth_labels)
+
+    class_names = [class_0_label,class_1_label]
+    j = 0
+    for k in class_names:
+        mask = truth_labels == j
+        print(mask)
+        reg_truth = data['targets'][mask,0]
+        reg_pred = data['outputs'][mask,0]
+        print(reg_truth)
+        print(reg_pred)
+        
+        responsePlot(reg_truth , reg_pred/reg_truth, save_path+class_names[j]+"_reg.pdf")
+        j = j+1
+        
+    return 
+
+save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/n0_pi0_03_12_24_v01/test_mjg_n0_pi0_20240312_regress/"
+class_0_label = "pi0"
+class_1_label = "n0"
+plot_roc_curve(save_path)
+plot_regression(save_path)
+plot_class(save_path)
+plot_cm(save_path,class_0_label,class_1_label )
+plot_response_perClass(save_path,class_0_label,class_1_label)
 
 file_path = save_path+'/predictions.npz'
 
@@ -155,8 +199,11 @@ print(auc_score)
 fpr, tpr, thresholds = roc_curve(class_truth, class_pred)
 
 
-roc_plot([fpr],[tpr],save_path+"roccy.pdf", atlas_x= .5, atlas_y = .5)
 
+
+
+
+roc_plot([fpr],[tpr],save_path+"roccy.pdf", atlas_x= .5, atlas_y = .5)
 responsePlot(reg_truth , reg_pred/reg_truth, save_path+"reg.pdf")
 resolutionPlot(reg_truth , reg_pred/reg_truth, save_path+"res_v01.pdf")
 resolutionPlot(reg_truth , reg_pred, save_path+"res_v02.pdf")
