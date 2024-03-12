@@ -331,8 +331,7 @@ class GraphDataGenerator:
                     
                     if cluster_calib_E is None:
                         continue
-                    if passed > 10:
-                        continue
+
                     passed= passed +1
                     cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
 
@@ -485,8 +484,7 @@ class GraphDataGenerator:
                         continue
                     passed_class1 = passed_class1 +1
                     
-                    if passed_class1 > 10:
-                        continue
+
                     cluster_eta = self.get_cluster_eta(event_data, event_ind, i)
 
                     nodes, global_node, cluster_num_nodes, cell_IDmap = self.get_nodes(event_data, event_ind, i)

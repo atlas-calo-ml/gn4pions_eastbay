@@ -9,6 +9,44 @@ from gn4pions.modules.plot_util import roc_plot
 
 import itertools
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_loss_curve(save_path):
+    # Define the file paths
+    file_path = save_path + '/losses.npz'
+    
+    # Load the loss values from the .npz file
+    data = np.load(file_path)
+    loss_values_train = data['training']
+    loss_values_val = data['validation']
+    loss_types = ["","_regress","_class"]
+
+    
+    for j in loss_types:
+        
+        loss_values_train = data['training'+j].mean(axis=1).reshape(-1, 1)
+        print(loss_values_train)
+
+        # print(loss_values_train)
+        # exit()
+        loss_values_val = data['validation'+j].mean(axis=1).reshape(-1, 1)
+
+    # Plotting the loss curve
+        plt.figure(figsize=(8, 6))
+        epochs = range(1, len(loss_values_train) + 1)  # Assuming loss_values array is 1-indexed for epochs
+        plt.plot(epochs, loss_values_train, color='blue', label='Training Loss')
+        plt.plot(epochs, loss_values_val, color='red', label='Validation Loss')
+
+        plt.ylim(0, 0.5 * 1.1)  # Setting the y-axis limit a bit higher than the max loss
+        plt.xlim(1, 30)  # Setting the x-axis to match the number of epochs
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.title(j+'Loss Curve over Epochs')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(save_path + j+"_loss_curve.pdf")
+
 
 def plot_roc_curve(save_path):
     # Define the file paths
@@ -160,14 +198,17 @@ def plot_response_perClass(save_path,class_0_label,class_1_label):
         print(reg_truth)
         print(reg_pred)
         
-        responsePlot(reg_truth , reg_pred/reg_truth, save_path+class_names[j]+"_reg.pdf")
+        responsePlot(reg_truth , reg_pred/reg_truth, save_path+class_names[j]+"_reg.pdf", title="Response Plot for " + k)
         j = j+1
         
     return 
 
 save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/n0_pi0_03_12_24_v01/test_mjg_n0_pi0_20240312_regress/"
 class_0_label = "pi0"
+class_1_label = "piplus"
 class_1_label = "n0"
+
+plot_loss_curve(save_path)
 plot_roc_curve(save_path)
 plot_regression(save_path)
 plot_class(save_path)

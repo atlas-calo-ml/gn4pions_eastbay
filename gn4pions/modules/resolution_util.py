@@ -15,7 +15,7 @@ from . import plot_util as pu
 def responsePlot(x, y, figfile='', statistic='median',
                  xlabel='Truth Particle Energy [GeV]', ylabel='Predicted Energy / Truth Particle Energy',
                  atlas_x=-1, atlas_y=-1, simulation=False, make_plot=True,
-                 textlist=[]):
+                 textlist=[],title="Response Plot"):
     xbin = [10**exp for exp in np.arange(-1., 3.1, 0.1)]
     ybin = np.arange(0., 3.1, 0.05)
     xcenter = [(xbin[i] + xbin[i+1]) / 2 for i in range(len(xbin)-1)]
@@ -34,6 +34,7 @@ def responsePlot(x, y, figfile='', statistic='median',
         plt.xscale('log')
         plt.ylim(0, 1.75)
         plt.xlim(0.3, )
+        plt.title(title)
         pu.ampl.set_xlabel(xlabel, fontsize=20)
         pu.ampl.set_ylabel(ylabel, fontsize=20)
         # ampl.set_zlabel('Clusters')
