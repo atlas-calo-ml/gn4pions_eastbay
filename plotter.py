@@ -203,6 +203,9 @@ def plot_response_perClass(save_path,class_0_label,class_1_label):
         
     return 
 
+
+
+## This is where the plotting is done
 save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/piplus_pi0_03_12_24_v09/test_mjg_n0_pi0_20240312_regress"
 class_0_label = "pi0"
 class_1_label = "piplus"
