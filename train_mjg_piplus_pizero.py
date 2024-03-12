@@ -375,6 +375,6 @@ if __name__ == "__main__":
             print(f'Loss didnt decrease from {curr_loss:.4f}')
 
         # Decrease learning rate every few epochs
-        if not (e+1)%20:   #%20:
-            optimizer.learning_rate = optimizer.learning_rate/10
+        if not (e+1)%40:   #%20:
+            optimizer.learning_rate = optimizer.learning_rate/5
             print(f'Learning rate decreased to: {optimizer.learning_rate.value():.3e}')

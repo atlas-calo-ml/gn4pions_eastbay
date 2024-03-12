@@ -10,7 +10,7 @@ data:
   output_dir: /hpcfs/users/a1768536/AGPF/gnn4pions/proper_run/
   already_preprocessed: False
   class_0: pi0
-  class_1: n0
+  class_1: piplus 
 model:
   block_type: graphnet
   concat_input: true
@@ -23,8 +23,8 @@ model:
   reducer: mean
 training: 
   alpha: 0.5
-  epochs: 25
+  epochs: 50
   gpu: 1
   learning_rate: 0.01
   log_freq: 100
-  save_dir: results/n0_pi0_03_12_24_v03/ 
+  save_dir: results/piplus_pi0_03_12_24_v09/ 

@@ -39,7 +39,7 @@ def plot_loss_curve(save_path):
         plt.plot(epochs, loss_values_val, color='red', label='Validation Loss')
 
         plt.ylim(0, 0.5 * 1.1)  # Setting the y-axis limit a bit higher than the max loss
-        plt.xlim(1, 30)  # Setting the x-axis to match the number of epochs
+        plt.xlim(1, len(loss_values_train)+5)  # Setting the x-axis to match the number of epochs
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.title(j+'Loss Curve over Epochs')
@@ -203,10 +203,10 @@ def plot_response_perClass(save_path,class_0_label,class_1_label):
         
     return 
 
-save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/n0_pi0_03_12_24_v01/test_mjg_n0_pi0_20240312_regress/"
+save_path = "/hpcfs/users/a1768536/AGPF/gnn4pions/run_test/results/piplus_pi0_03_12_24_v09/test_mjg_n0_pi0_20240312_regress"
 class_0_label = "pi0"
 class_1_label = "piplus"
-class_1_label = "n0"
+# class_1_label = "n0"
 
 plot_loss_curve(save_path)
 plot_roc_curve(save_path)
@@ -239,29 +239,5 @@ auc_score = roc_auc_score(class_truth,  class_pred)
 print(auc_score)
 fpr, tpr, thresholds = roc_curve(class_truth, class_pred)
 
-
-
-
-
-
-roc_plot([fpr],[tpr],save_path+"roccy.pdf", atlas_x= .5, atlas_y = .5)
 responsePlot(reg_truth , reg_pred/reg_truth, save_path+"reg.pdf")
-resolutionPlot(reg_truth , reg_pred/reg_truth, save_path+"res_v01.pdf")
-resolutionPlot(reg_truth , reg_pred, save_path+"res_v02.pdf")
 
-# Load the FPR, TPR, and AUC values from files
-# fpr = np.loadtxt(save_path + fpr_file)
-# tpr = np.loadtxt(save_path + tpr_file)
-# with open(save_path +auc_file, 'r') as f:
-#     auc_score = float(f.read())
-
-# # Plotting the ROC curve
-# plt.figure(figsize=(8, 6))
-# plt.plot(fpr, tpr, color='blue', label=f'AUC = {auc_score:.5f}')
-# plt.plot([0, 1], [0, 1], color='red', linestyle='--', label='Random classifier')
-# plt.xlabel('False Positive Rate')
-# plt.ylabel('True Positive Rate')
-# plt.title(f'ROC Curve for pi0/piplus')
-# plt.legend()
-# plt.grid(True)
-# plt.savefig(save_path + "_roc_curve.pdf")
